@@ -1,5 +1,6 @@
 import * as winston from 'winston';
 import * as LokiTransport from 'winston-loki';
+import { ILogger } from './logger.interface';
 import { LoggerConfig, LogLevel } from '../config/logger.config';
 import { contextManager, LogContext } from '../context/async-context';
 
@@ -20,7 +21,7 @@ const customLevels = {
   },
 };
 
-export class CentralLogger {
+export class CentralLogger implements ILogger {
   private logger: winston.Logger;
   private config: LoggerConfig;
 
@@ -205,7 +206,7 @@ export class CentralLogger {
   /**
    * Create child logger with additional metadata
    */
-  child(metadata: Record<string, any>): CentralLogger {
+  child(metadata: Record<string, any>): ILogger {
     const childLogger = new CentralLogger(this.config);
     childLogger.logger = this.logger.child(metadata);
     return childLogger;
@@ -222,14 +223,14 @@ export class CentralLogger {
   }
 }
 
-let globalLogger: CentralLogger;
+let globalLogger: ILogger;
 
-export function initializeLogger(config: LoggerConfig): CentralLogger {
+export function initializeLogger(config: LoggerConfig): ILogger {
   globalLogger = new CentralLogger(config);
   return globalLogger;
 }
 
-export function getLogger(): CentralLogger {
+export function getLogger(): ILogger {
   if (!globalLogger) {
     throw new Error('Logger not initialized. Call initializeLogger first.');
   }

@@ -4,6 +4,7 @@ An enterprise-ready centralized logging system with structured logging and Grafa
 
 ## Features
 
+✅ **Multiple Logger Types** - Console, File, In-Memory, or Central (Loki) logging
 ✅ **Structured Logging** - JSON-formatted logs with contextual metadata
 ✅ **Distributed Tracing** - Automatic trace ID and span ID tracking
 ✅ **Grafana Loki Integration** - Cloud-native log aggregation and analysis
@@ -13,7 +14,7 @@ An enterprise-ready centralized logging system with structured logging and Grafa
 ✅ **Performance Metrics** - Request duration and memory usage tracking
 ✅ **Request Context** - Async context for user, session, and request metadata
 ✅ **Sensitive Data Filtering** - Automatic redaction of passwords, tokens, and API keys
-✅ **Multiple Transports** - Console, file, and cloud (Loki) logging
+✅ **Builder Pattern** - Fluent API for easy logger configuration
 ✅ **Log Levels** - error, warn, info, http, debug
 ✅ **Audit Logging** - Compliance-ready audit trail support
 
@@ -74,6 +75,132 @@ app.use(errorLoggingMiddleware());
 
 app.listen(3000, () => {
   getLogger().info('Server started on port 3000');
+});
+```
+
+## Logger Types
+
+The logging system supports multiple logger types to suit different environments and use cases:
+
+### 1. **Console Logger** (Development)
+
+Simple console output for development and debugging:
+
+```typescript
+import { LoggerBuilder } from '@kitium-ai/centralized-logger';
+
+const logger = LoggerBuilder.console('my-app');
+logger.info('Application started');
+```
+
+**Best for:** Local development, testing, quick debugging
+
+### 2. **In-Memory Logger** (Testing/Debugging)
+
+Stores logs in memory for inspection and testing:
+
+```typescript
+import { LoggerBuilder, InMemoryLogger } from '@kitium-ai/centralized-logger';
+
+const logger = LoggerBuilder.inMemory('my-app') as InMemoryLogger;
+logger.info('User login', { userId: '123' });
+
+// Query logs
+const logs = logger.getLogs();
+const errorLogs = logger.getLogsByLevel('error');
+const stats = logger.getStats();
+
+// Export logs
+const json = logger.export();
+```
+
+**Best for:** Unit testing, debugging, log inspection, development
+
+### 3. **File Logger** (Production/Staging)
+
+Writes logs to disk with automatic rotation:
+
+```typescript
+import { LoggerBuilder } from '@kitium-ai/centralized-logger';
+
+const logger = LoggerBuilder.file('my-app', './logs')
+  .withMaxFileSize('100m')
+  .withMaxFiles(14)
+  .withConsole(false) // Only file, no console
+  .build();
+
+logger.info('Application started');
+```
+
+**Best for:** Staging, production servers, on-premise deployments
+
+### 4. **Central Logger** (Cloud-Native with Loki)
+
+Sends logs to Grafana Loki for cloud-native environments:
+
+```typescript
+import { LoggerBuilder, getLoggerConfig } from '@kitium-ai/centralized-logger';
+
+const config = getLoggerConfig();
+const logger = LoggerBuilder.central(config);
+
+logger.info('Application started');
+// Logs are aggregated in Loki and queryable in Grafana
+```
+
+**Best for:** Microservices, Kubernetes, cloud deployments, centralized log analysis
+
+## Using the Builder Pattern
+
+The `LoggerBuilder` provides a fluent API for easy configuration:
+
+```typescript
+import { LoggerBuilder, LoggerType } from '@kitium-ai/centralized-logger';
+
+// Console logger with all options
+const logger = new LoggerBuilder()
+  .withType(LoggerType.CONSOLE)
+  .withServiceName('my-service')
+  .withColors(true)
+  .withTimestamps(true)
+  .build();
+
+// File logger with rotation
+const fileLogger = new LoggerBuilder()
+  .withType(LoggerType.FILE)
+  .withServiceName('my-app')
+  .withLogPath('./logs')
+  .withMaxFileSize('50m')
+  .withMaxFiles(7)
+  .withConsole(true) // Include console output
+  .build();
+
+// In-memory logger with large capacity
+const memLogger = new LoggerBuilder()
+  .withType(LoggerType.IN_MEMORY)
+  .withServiceName('test-app')
+  .withMaxInMemoryLogs(50000)
+  .build();
+```
+
+## Using the Factory Pattern
+
+For dynamic logger creation:
+
+```typescript
+import { LoggerFactory, LoggerType } from '@kitium-ai/centralized-logger';
+
+// Create logger dynamically
+const logger = LoggerFactory.create({
+  type: LoggerType.CONSOLE,
+  serviceName: 'my-app',
+});
+
+// Create from string (useful for env variables)
+const loggerType = process.env.LOGGER_TYPE || 'console';
+const logger = LoggerFactory.createFromString(loggerType, {
+  type: LoggerType.CONSOLE,
+  serviceName: 'my-app',
 });
 ```
 
