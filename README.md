@@ -23,15 +23,15 @@ An enterprise-ready centralized logging system with structured logging and Grafa
 ### Installation
 
 ```bash
-npm install @kitium-ai/centralized-logger
+npm install @kitiumai/logger
 # or
-yarn add @kitium-ai/centralized-logger
+yarn add @kitiumai/logger
 ```
 
 ### Basic Setup
 
 ```typescript
-import { initializeLogger, getLoggerConfig, getLogger } from '@kitium-ai/centralized-logger';
+import { initializeLogger, getLoggerConfig, getLogger } from '@kitiumai/logger';
 
 // Initialize logger with configuration
 const config = getLoggerConfig();
@@ -52,7 +52,7 @@ import {
   tracingMiddleware,
   errorLoggingMiddleware,
   performanceMetricsMiddleware,
-} from '@kitium-ai/centralized-logger';
+} from '@kitiumai/logger';
 
 const app = express();
 
@@ -87,7 +87,7 @@ The logging system supports multiple logger types to suit different environments
 Simple console output for development and debugging:
 
 ```typescript
-import { LoggerBuilder } from '@kitium-ai/centralized-logger';
+import { LoggerBuilder } from '@kitiumai/logger';
 
 const logger = LoggerBuilder.console('my-app');
 logger.info('Application started');
@@ -100,7 +100,7 @@ logger.info('Application started');
 Stores logs in memory for inspection and testing:
 
 ```typescript
-import { LoggerBuilder, InMemoryLogger } from '@kitium-ai/centralized-logger';
+import { LoggerBuilder, InMemoryLogger } from '@kitiumai/logger';
 
 const logger = LoggerBuilder.inMemory('my-app') as InMemoryLogger;
 logger.info('User login', { userId: '123' });
@@ -121,7 +121,7 @@ const json = logger.export();
 Writes logs to disk with automatic rotation:
 
 ```typescript
-import { LoggerBuilder } from '@kitium-ai/centralized-logger';
+import { LoggerBuilder } from '@kitiumai/logger';
 
 const logger = LoggerBuilder.file('my-app', './logs')
   .withMaxFileSize('100m')
@@ -139,7 +139,7 @@ logger.info('Application started');
 Sends logs to Grafana Loki for cloud-native environments:
 
 ```typescript
-import { LoggerBuilder, getLoggerConfig } from '@kitium-ai/centralized-logger';
+import { LoggerBuilder, getLoggerConfig } from '@kitiumai/logger';
 
 const config = getLoggerConfig();
 const logger = LoggerBuilder.central(config);
@@ -155,7 +155,7 @@ logger.info('Application started');
 The `LoggerBuilder` provides a fluent API for easy configuration:
 
 ```typescript
-import { LoggerBuilder, LoggerType } from '@kitium-ai/centralized-logger';
+import { LoggerBuilder, LoggerType } from '@kitiumai/logger';
 
 // Console logger with all options
 const logger = new LoggerBuilder()
@@ -188,7 +188,7 @@ const memLogger = new LoggerBuilder()
 For dynamic logger creation:
 
 ```typescript
-import { LoggerFactory, LoggerType } from '@kitium-ai/centralized-logger';
+import { LoggerFactory, LoggerType } from '@kitiumai/logger';
 
 // Create logger dynamically
 const logger = LoggerFactory.create({
@@ -250,7 +250,7 @@ LOKI_PROTOCOL=http
 ### Basic Logging
 
 ```typescript
-import { getLogger } from '@kitium-ai/centralized-logger';
+import { getLogger } from '@kitiumai/logger';
 
 const logger = getLogger();
 
@@ -273,7 +273,7 @@ logger.http('Request completed', { statusCode: 200, duration: 45 });
 ### Distributed Tracing
 
 ```typescript
-import { contextManager } from '@kitium-ai/centralized-logger';
+import { contextManager } from '@kitiumai/logger';
 
 // Automatic in Express middleware, but can be used manually:
 contextManager.run(
@@ -291,7 +291,7 @@ contextManager.run(
 ### Request Context Enhancement
 
 ```typescript
-import { addMetadata } from '@kitium-ai/centralized-logger';
+import { addMetadata } from '@kitiumai/logger';
 
 app.get('/api/users/:id', (req, res) => {
   const userId = req.params.id;
@@ -310,7 +310,7 @@ app.get('/api/users/:id', (req, res) => {
 ### Error Handling with LoggableError
 
 ```typescript
-import { LoggableError } from '@kitium-ai/centralized-logger';
+import { LoggableError } from '@kitiumai/logger';
 
 // Create errors with structured metadata
 const error = new LoggableError(
@@ -335,7 +335,7 @@ try {
 ### Performance Timing
 
 ```typescript
-import { createTimer } from '@kitium-ai/centralized-logger';
+import { createTimer } from '@kitiumai/logger';
 
 const timer = createTimer('Database query');
 
@@ -350,7 +350,7 @@ timer.end({ recordCount: result.length });
 ### Async Operations with Error Logging
 
 ```typescript
-import { withErrorLogging } from '@kitium-ai/centralized-logger';
+import { withErrorLogging } from '@kitiumai/logger';
 
 const result = await withErrorLogging(
   async () => {
@@ -368,7 +368,7 @@ const result = await withErrorLogging(
 ### Audit Logging (Compliance)
 
 ```typescript
-import { auditLog } from '@kitium-ai/centralized-logger';
+import { auditLog } from '@kitiumai/logger';
 
 // Log security/compliance-relevant events
 auditLog('UPDATE', 'user_permissions', userId, {
@@ -385,7 +385,7 @@ auditLog('UPDATE', 'user_permissions', userId, {
 ### Batch Logging
 
 ```typescript
-import { BatchLogger } from '@kitium-ai/centralized-logger';
+import { BatchLogger } from '@kitiumai/logger';
 
 const batch = new BatchLogger();
 
@@ -449,7 +449,7 @@ docker-compose logs -f loki
 
 ```typescript
 import winston from 'winston';
-import { CentralLogger } from '@kitium-ai/centralized-logger';
+import { CentralLogger } from '@kitiumai/logger';
 
 const logger = new CentralLogger(config);
 
@@ -460,7 +460,7 @@ const logger = new CentralLogger(config);
 ### Request Body Logging with Filtering
 
 ```typescript
-import { bodyLoggingMiddleware } from '@kitium-ai/centralized-logger';
+import { bodyLoggingMiddleware } from '@kitiumai/logger';
 
 // Log request bodies but filter sensitive fields
 app.use(bodyLoggingMiddleware([
@@ -475,7 +475,7 @@ app.use(bodyLoggingMiddleware([
 ### User Context Middleware
 
 ```typescript
-import { userContextMiddleware } from '@kitium-ai/centralized-logger';
+import { userContextMiddleware } from '@kitiumai/logger';
 
 // Automatically extract user ID from request
 app.use(userContextMiddleware((req) => {
@@ -487,7 +487,7 @@ app.use(userContextMiddleware((req) => {
 ### Sanitizing Sensitive Data
 
 ```typescript
-import { sanitizeData } from '@kitium-ai/centralized-logger';
+import { sanitizeData } from '@kitiumai/logger';
 
 const data = {
   email: 'user@example.com',
@@ -591,7 +591,7 @@ import {
   LokiConfig,
   LogContext,
   StructuredLogEntry,
-} from '@kitium-ai/centralized-logger';
+} from '@kitiumai/logger';
 
 // All configurations are type-safe
 ```

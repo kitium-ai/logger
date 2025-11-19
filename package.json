@@ -1,10 +1,47 @@
 {
-  "name": "@kitium-ai/centralized-logger",
+  "name": "@kitiumai/logger",
   "version": "1.0.0",
   "type": "module",
   "description": "Enterprise-ready centralized logging system with Loki integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware/express-middleware.d.ts",
+      "import": "./dist/middleware/express-middleware.js",
+      "require": "./dist/middleware/express-middleware.js",
+      "default": "./dist/middleware/express-middleware.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/logger-utils.d.ts",
+      "import": "./dist/utils/logger-utils.js",
+      "require": "./dist/utils/logger-utils.js",
+      "default": "./dist/utils/logger-utils.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kitiumai/logger.git"
+  },
+  "homepage": "https://github.com/kitiumai/logger#readme",
+  "bugs": {
+    "url": "https://github.com/kitiumai/logger/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
@@ -24,7 +61,12 @@
     "loki",
     "centralized",
     "winston",
-    "observability"
+    "observability",
+    "kitium",
+    "logger",
+    "typescript",
+    "nodejs",
+    "kitiumai"
   ],
   "author": "Kitium AI",
   "license": "MIT",
