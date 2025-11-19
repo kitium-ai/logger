@@ -5,7 +5,12 @@
   "description": "Enterprise-ready centralized logging system with Loki integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "scripts", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -75,7 +80,7 @@
   "author": "Kitium AI",
   "license": "MIT",
   "dependencies": {
-    "@kitiumai/lint": "^1.2.6",
+    "@kitiumai/lint": "^1.2.9",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",

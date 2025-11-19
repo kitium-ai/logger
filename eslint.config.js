@@ -3,7 +3,7 @@
  * Uses @kitiumai/lint as the base configuration
  */
 
-import { typeScriptConfig } from '@kitiumai/lint/eslint';
+import { baseConfig, typeScriptConfig, securityConfig } from '@kitiumai/lint/eslint';
 
 export default [
   {
@@ -26,7 +26,9 @@ export default [
       'scripts/',
     ],
   },
+  ...baseConfig,
   ...typeScriptConfig,
+  ...securityConfig,
   {
     name: 'project-overrides',
     files: ['**/*.{js,jsx,ts,tsx}'],
