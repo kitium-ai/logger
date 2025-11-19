@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console, no-unused-vars */
 /**
  * Migration Script for Kitium Logger
  * Helps migrate existing projects from other loggers to @kitium-ai/centralized-logger
@@ -63,7 +64,7 @@ function scanFile(filePath) {
         addFileMatch(filePath, index + 1);
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Skip files that can't be read
   }
 }
@@ -91,7 +92,7 @@ function scanDirectory(dir, exclude = ['node_modules', '.git', 'dist', 'build'])
         scanFile(filePath);
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Skip directories that can't be read
   }
 }
@@ -146,66 +147,14 @@ function printMigrationGuide() {
   console.log('   │ logger.info("App started", { version: "1.0.0" });       │');
   console.log('   └─────────────────────────────────────────────────────────┘\n');
 
-  console.log('3️⃣  Migration examples:\n');
-
-  console.log('   ❌ Before (console.log):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ console.log("User logged in", userId);                  │');
-  console.log('   │ console.error("Database error", err);                   │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('   ✅ After (kitium logger):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ logger.info("User logged in", { userId });              │');
-  console.log('   │ logger.error("Database error", {}, err);                │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('   ❌ Before (Winston):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ logger.info("Request handled", {                        │');
-  console.log('   │   method: req.method,                                   │');
-  console.log('   │   path: req.path,                                       │');
-  console.log('   │ });                                                      │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('   ✅ After (kitium logger):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ logger.info("Request handled", {                        │');
-  console.log('   │   method: req.method,                                   │');
-  console.log('   │   path: req.path,                                       │');
-  console.log('   │ });                                                      │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('4️⃣  Available logger types:\n');
+  console.log('3️⃣  Available logger types:\n');
   console.log('   • ConsoleLogger  - Simple console output (development)');
   console.log('   • FileLogger     - File-based with rotation (production)');
   console.log('   • InMemoryLogger - In-memory storage (testing)');
   console.log('   • CentralLogger  - Cloud-native with Loki (cloud)\n');
 
-  console.log('5️⃣  Express.js middleware integration:\n');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ import {                                                 │');
-  console.log('   │   tracingMiddleware,                                     │');
-  console.log('   │   errorLoggingMiddleware,                               │');
-  console.log('   │   bodyLoggingMiddleware,                                │');
-  console.log('   │   performanceMetricsMiddleware,                         │');
-  console.log('   │ } from "@kitium-ai/centralized-logger";                 │');
-  console.log('   │                                                           │');
-  console.log('   │ app.use(tracingMiddleware());                            │');
-  console.log('   │ app.use(bodyLoggingMiddleware());                        │');
-  console.log('   │ app.use(performanceMetricsMiddleware());                │');
-  console.log('   │ app.use(errorLoggingMiddleware());                       │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('6️⃣  Log levels available:');
-  console.log('   • logger.error(message, metadata, error)');
-  console.log('   • logger.warn(message, metadata)');
-  console.log('   • logger.info(message, metadata)');
-  console.log('   • logger.http(message, metadata)');
-  console.log('   • logger.debug(message, metadata)\n');
-
-  console.log('📖 For more examples, see:');
-  console.log('   https://github.com/kitium-ai/logger/src/examples/\n');
+  console.log('📖 For more examples and migration details, see:');
+  console.log('   MIGRATION.md in the project root\n');
 }
 
 async function main() {
@@ -226,15 +175,6 @@ async function main() {
 
   printMigrationReport();
   printMigrationGuide();
-
-  const generateScript = await question(
-    '\n🤖 Would you like me to generate a migration script? (yes/no): '
-  );
-
-  if (generateScript.toLowerCase() === 'yes' || generateScript.toLowerCase() === 'y') {
-    console.log('\n📝 Generating migration script...');
-    console.log('Note: For full migration support, please use the TypeScript version: npm run migrate:ts\n');
-  }
 
   rl.close();
 }

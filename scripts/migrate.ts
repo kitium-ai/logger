@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
 #!/usr/bin/env node
 /**
- * Migration Script for Kitium Logger
+ * Migration Script for Kitium Logger - TypeScript Version
  * Helps migrate existing projects from other loggers to @kitium-ai/centralized-logger
  */
 
@@ -14,7 +15,6 @@ interface MigrationStats {
   bunyan: number;
   pino: number;
   debug: number;
-  custom: number;
   files: Map<string, number[]>;
 }
 
@@ -24,7 +24,6 @@ const stats: MigrationStats = {
   bunyan: 0,
   pino: 0,
   debug: 0,
-  custom: 0,
   files: new Map(),
 };
 
@@ -74,7 +73,7 @@ function scanFile(filePath: string): void {
         addFileMatch(filePath, index + 1);
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Skip files that can't be read
   }
 }
@@ -102,7 +101,7 @@ function scanDirectory(dir: string, exclude: string[] = ['node_modules', '.git',
         scanFile(filePath);
       }
     });
-  } catch (error) {
+  } catch (_error) {
     // Skip directories that can't be read
   }
 }
@@ -157,70 +156,18 @@ function printMigrationGuide(): void {
   console.log('   │ logger.info("App started", { version: "1.0.0" });       │');
   console.log('   └─────────────────────────────────────────────────────────┘\n');
 
-  console.log('3️⃣  Migration examples:\n');
-
-  console.log('   ❌ Before (console.log):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ console.log("User logged in", userId);                  │');
-  console.log('   │ console.error("Database error", err);                   │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('   ✅ After (kitium logger):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ logger.info("User logged in", { userId });              │');
-  console.log('   │ logger.error("Database error", {}, err);                │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('   ❌ Before (Winston):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ logger.info("Request handled", {                        │');
-  console.log('   │   method: req.method,                                   │');
-  console.log('   │   path: req.path,                                       │');
-  console.log('   │ });                                                      │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('   ✅ After (kitium logger):');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ logger.info("Request handled", {                        │');
-  console.log('   │   method: req.method,                                   │');
-  console.log('   │   path: req.path,                                       │');
-  console.log('   │ });                                                      │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('4️⃣  Available logger types:\n');
+  console.log('3️⃣  Available logger types:\n');
   console.log('   • ConsoleLogger  - Simple console output (development)');
   console.log('   • FileLogger     - File-based with rotation (production)');
   console.log('   • InMemoryLogger - In-memory storage (testing)');
   console.log('   • CentralLogger  - Cloud-native with Loki (cloud)\n');
 
-  console.log('5️⃣  Express.js middleware integration:\n');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ import {                                                 │');
-  console.log('   │   tracingMiddleware,                                     │');
-  console.log('   │   errorLoggingMiddleware,                               │');
-  console.log('   │   bodyLoggingMiddleware,                                │');
-  console.log('   │   performanceMetricsMiddleware,                         │');
-  console.log('   │ } from "@kitium-ai/centralized-logger";                 │');
-  console.log('   │                                                           │');
-  console.log('   │ app.use(tracingMiddleware());                            │');
-  console.log('   │ app.use(bodyLoggingMiddleware());                        │');
-  console.log('   │ app.use(performanceMetricsMiddleware());                │');
-  console.log('   │ app.use(errorLoggingMiddleware());                       │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
-
-  console.log('6️⃣  Log levels available:');
-  console.log('   • logger.error(message, metadata, error)');
-  console.log('   • logger.warn(message, metadata)');
-  console.log('   • logger.info(message, metadata)');
-  console.log('   • logger.http(message, metadata)');
-  console.log('   • logger.debug(message, metadata)\n');
-
-  console.log('📖 For more examples, see:');
-  console.log('   https://github.com/kitium-ai/logger/src/examples/\n');
+  console.log('📖 For more examples and migration details, see:');
+  console.log('   MIGRATION.md in the project root\n');
 }
 
 async function main(): Promise<void> {
-  console.log('\n🚀 Kitium Logger Migration Tool\n');
+  console.log('\n🚀 Kitium Logger Migration Tool (TypeScript)\n');
 
   const targetDir = await question('Enter the project directory to scan (default: current directory): ');
   const dir = targetDir.trim() || process.cwd();
@@ -238,141 +185,7 @@ async function main(): Promise<void> {
   printMigrationReport();
   printMigrationGuide();
 
-  const generateScript = await question(
-    '\n🤖 Would you like me to generate a migration script? (yes/no): '
-  );
-
-  if (generateScript.toLowerCase() === 'yes' || generateScript.toLowerCase() === 'y') {
-    await generateMigrationScript();
-  }
-
   rl.close();
-}
-
-async function generateMigrationScript(): Promise<void> {
-  const outputFile = await question(
-    '\nEnter output file path (default: ./migrate-logger.ts): '
-  );
-  const filePath = outputFile.trim() || './migrate-logger.ts';
-
-  const script = generateMigrationScriptContent();
-  fs.writeFileSync(filePath, script);
-
-  console.log(`\n✅ Migration script generated: ${filePath}`);
-  console.log('\nNext steps:');
-  console.log('  1. Review the generated script');
-  console.log('  2. Run it in a version-controlled environment');
-  console.log('  3. Test your application thoroughly');
-  console.log('  4. Commit changes\n');
-}
-
-function generateMigrationScriptContent(): string {
-  return `/**
- * Auto-generated Logger Migration Script
- *
- * This script helps migrate from various loggers to @kitium-ai/centralized-logger
- *
- * WARNING: Always test in a development environment first!
- */
-
-import * as fs from 'fs';
-import * as path from 'path';
-
-interface FilePattern {
-  from: RegExp;
-  to: string;
-}
-
-const patterns: FilePattern[] = [
-  // console.log -> logger.info
-  {
-    from: /console\\.log\\(([^)]+)\\)/g,
-    to: 'logger.info($1)',
-  },
-  // console.error -> logger.error
-  {
-    from: /console\\.error\\(([^)]+)\\)/g,
-    to: 'logger.error($1)',
-  },
-  // console.warn -> logger.warn
-  {
-    from: /console\\.warn\\(([^)]+)\\)/g,
-    to: 'logger.warn($1)',
-  },
-  // console.debug -> logger.debug
-  {
-    from: /console\\.debug\\(([^)]+)\\)/g,
-    to: 'logger.debug($1)',
-  },
-];
-
-function migrateFile(filePath: string): boolean {
-  try {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    let modified = false;
-
-    patterns.forEach(({ from, to }) => {
-      if (from.test(content)) {
-        content = content.replace(from, to);
-        modified = true;
-      }
-    });
-
-    if (modified) {
-      fs.writeFileSync(filePath, content, 'utf-8');
-      console.log(\`✅ Migrated: \${filePath}\`);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error(\`❌ Error migrating \${filePath}:\`, error);
-    return false;
-  }
-}
-
-function migrateDirectory(
-  dir: string,
-  exclude: string[] = ['node_modules', '.git', 'dist', 'build', 'coverage']
-): number {
-  let count = 0;
-
-  try {
-    const files = fs.readdirSync(dir);
-
-    files.forEach((file) => {
-      if (exclude.includes(file)) return;
-
-      const filePath = path.join(dir, file);
-      const stat = fs.statSync(filePath);
-
-      if (stat.isDirectory()) {
-        count += migrateDirectory(filePath, exclude);
-      } else if (stat.isFile() && /\\.(js|ts|jsx|tsx)$/.test(filePath)) {
-        if (migrateFile(filePath)) {
-          count++;
-        }
-      }
-    });
-  } catch (error) {
-    console.error(\`Error reading directory \${dir}:\`, error);
-  }
-
-  return count;
-}
-
-// Main execution
-const projectDir = process.argv[2] || process.cwd();
-console.log(\`📂 Migrating project in: \${projectDir}\\n\`);
-
-const migratedCount = migrateDirectory(projectDir);
-
-console.log(\`\\n✨ Migration complete! Migrated \${migratedCount} files.\\n\`);
-console.log('⚠️  Important:');
-console.log('  1. Add import for logger in files that were modified');
-console.log('  2. Verify all log calls have correct parameters');
-console.log('  3. Test your application thoroughly');
-console.log('  4. Update error handling if needed\\n');
-`;
 }
 
 // Run the migration tool
