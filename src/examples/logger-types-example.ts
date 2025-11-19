@@ -3,11 +3,14 @@
  * Examples demonstrating different logger types
  */
 
+import type { InMemoryLogger } from '../logger/in-memory-logger';
 import {
   LoggerBuilder,
   LoggerFactory,
   LoggerType,
   getLoggerConfig,
+  initGlobalLogger,
+  getGlobalLogger,
 } from '../index';
 
 /**
@@ -63,7 +66,10 @@ export function exampleInMemoryLogger() {
 export function exampleFileLogger() {
   console.log('\n=== File Logger Example ===');
 
-  const logger = LoggerBuilder.file('my-app', './logs/app')
+  const logger = new LoggerBuilder()
+    .withType(LoggerType.FILE)
+    .withServiceName('my-app')
+    .withLogPath('./logs/app')
     .withMaxFileSize('50m')
     .withMaxFiles(7)
     .build();
@@ -141,8 +147,6 @@ export function exampleLoggerFactory() {
 export function exampleGlobalLogger() {
   console.log('\n=== Global Logger Example ===');
 
-  import { initGlobalLogger, getGlobalLogger } from '../index';
-
   // Initialize global logger
   initGlobalLogger({
     type: LoggerType.CONSOLE,
@@ -157,7 +161,7 @@ export function exampleGlobalLogger() {
 /**
  * Example 7: Logger with Context
  */
-export function exampleLoggerWithContext() {
+export async function exampleLoggerWithContext() {
   console.log('\n=== Logger with Context Example ===');
 
   const logger = LoggerBuilder.console('context-app');
@@ -220,7 +224,10 @@ export function exampleEnvironmentSetup() {
   } else {
     // Staging: File-based logging with console output
     console.log('Setting up staging logger (file)');
-    logger = LoggerBuilder.file('app', './logs/staging')
+    logger = new LoggerBuilder()
+      .withType(LoggerType.FILE)
+      .withServiceName('app')
+      .withLogPath('./logs/staging')
       .withConsole(true)
       .build();
   }

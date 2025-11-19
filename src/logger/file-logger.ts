@@ -1,5 +1,5 @@
 import * as winston from 'winston';
-import * as DailyRotateFile from 'winston-daily-rotate-file';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import type { ILogger } from './logger.interface';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';

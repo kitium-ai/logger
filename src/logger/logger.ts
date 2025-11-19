@@ -1,5 +1,5 @@
 import * as winston from 'winston';
-import * as LokiTransport from 'winston-loki';
+import LokiTransport from 'winston-loki';
 import type { ILogger } from './logger.interface';
 import type { LoggerConfig } from '../config/logger.config';
 import type { LogContext } from '../context/async-context';
@@ -225,7 +225,7 @@ export class CentralLogger implements ILogger {
   }
 }
 
-let globalLogger: ILogger;
+let globalLogger: ILogger | undefined;
 
 export function initializeLogger(config: LoggerConfig): ILogger {
   globalLogger = new CentralLogger(config);
@@ -239,4 +239,4 @@ export function getLogger(): ILogger {
   return globalLogger;
 }
 
-export default globalLogger;
+export default globalLogger as ILogger;

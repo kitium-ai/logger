@@ -4,6 +4,16 @@ import { getLogger } from '../logger/logger';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
 
+// Augment Express Request type to include user property
+declare global {
+  namespace Express {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+    interface Request {
+      user?: { id?: string };
+    }
+  }
+}
+
 /**
  * Middleware to add tracing and context to all requests
  */
@@ -102,12 +112,13 @@ export function errorLoggingMiddleware() {
     const errAny = err as any;
     const statusCode = errAny.statusCode ?? errAny.status ?? 500;
     const message = errAny.message ?? 'Internal Server Error';
+    const stack = errAny.stack ?? (err instanceof Error ? err.stack : null);
 
     logger.error(`Request error: ${message}`, {
       statusCode,
       method: req.method,
       path: req.path,
-      stack: err.stack,
+      stack,
       query: req.query,
       body: sanitizeBody(req.body),
     });
@@ -117,7 +128,7 @@ export function errorLoggingMiddleware() {
       status: statusCode,
       traceId: contextManager.get('traceId'),
       ...(process.env.NODE_ENV !== 'production' && {
-        stack: err.stack,
+        stack,
       }),
     });
   };
