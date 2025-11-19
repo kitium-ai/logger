@@ -8,7 +8,7 @@ export function createTimer(label = 'Operation') {
   const startMemory = process.memoryUsage().heapUsed;
 
   return {
-    end: (metadata?: Record<string, any>) => {
+    end: (metadata?: Record<string, unknown>) => {
       const duration = Date.now() - startTime;
       const memoryUsed = process.memoryUsage().heapUsed - startMemory;
 
@@ -39,9 +39,9 @@ export function createTimer(label = 'Operation') {
  */
 export async function withErrorLogging<T>(
   fn: () => Promise<T>,
-  context?: { operation: string; metadata?: Record<string, any> },
+  context?: { operation: string; metadata?: Record<string, unknown> },
 ): Promise<T> {
-  const operation = context?.operation || 'Operation';
+  const operation = context?.operation ?? 'Operation';
   const timer = createTimer(operation);
 
   try {
@@ -59,9 +59,9 @@ export async function withErrorLogging<T>(
  */
 export function withErrorLoggingSync<T>(
   fn: () => T,
-  context?: { operation: string; metadata?: Record<string, any> },
+  context?: { operation: string; metadata?: Record<string, unknown> },
 ): T {
-  const operation = context?.operation || 'Operation';
+  const operation = context?.operation ?? 'Operation';
   const timer = createTimer(operation);
 
   try {
@@ -77,9 +77,9 @@ export function withErrorLoggingSync<T>(
 /**
  * Log function entry and exit (useful for debugging)
  */
-export function logFunctionCall<T extends any[], R>(
+export function logFunctionCall<T extends unknown[], R>(
   fn: (...args: T) => R,
-  fnName: string = fn.name || 'anonymous',
+  fnName: string = fn.name ?? 'anonymous',
 ) {
   return (...args: T) => {
     getLogger().debug(`Entering ${fnName}`, { args });
@@ -101,7 +101,7 @@ export class LoggableError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly metadata?: Record<string, any>,
+    public readonly metadata?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'LoggableError';
@@ -129,26 +129,26 @@ export class LoggableError extends Error {
  * Create batch logger for logging multiple operations
  */
 export class BatchLogger {
-  private logs: Array<{ level: string; message: string; metadata?: any }> = [];
+  private logs: Array<{ level: string; message: string; metadata?: unknown }> = [];
 
-  add(level: string, message: string, metadata?: any): this {
+  add(level: string, message: string, metadata?: unknown): this {
     this.logs.push({ level, message, metadata });
     return this;
   }
 
-  error(message: string, metadata?: any): this {
+  error(message: string, metadata?: unknown): this {
     return this.add('error', message, metadata);
   }
 
-  warn(message: string, metadata?: any): this {
+  warn(message: string, metadata?: unknown): this {
     return this.add('warn', message, metadata);
   }
 
-  info(message: string, metadata?: any): this {
+  info(message: string, metadata?: unknown): this {
     return this.add('info', message, metadata);
   }
 
-  debug(message: string, metadata?: any): this {
+  debug(message: string, metadata?: unknown): this {
     return this.add('debug', message, metadata);
   }
 
@@ -188,7 +188,7 @@ export type StructuredLogEntry = {
   requestId?: string;
   sessionId?: string;
   correlationId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   stack?: string;
 }
 
@@ -199,7 +199,7 @@ export function auditLog(
   action: string,
   resource: string,
   actor?: string,
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ): void {
   const logger = getLogger();
   logger.info(`Audit: ${action} on ${resource}`, {

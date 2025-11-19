@@ -11,17 +11,17 @@ export function tracingMiddleware() {
   return (req: Request, res: Response, next: NextFunction) => {
     // Generate or extract trace ID
     const traceId =
-      (req.get('x-trace-id') as string) ||
-      (req.get('x-request-id') as string) ||
+      (req.get('x-trace-id') as string) ??
+      (req.get('x-request-id') as string) ??
       uuidv4();
 
     const spanId = uuidv4();
     const requestId = uuidv4();
 
     // Extract user info if available
-    const userId = (req.get('x-user-id') as string) || null;
-    const sessionId = (req.get('x-session-id') as string) || null;
-    const correlationId = (req.get('x-correlation-id') as string) || null;
+    const userId = (req.get('x-user-id') as string) ?? null;
+    const sessionId = (req.get('x-session-id') as string) ?? null;
+    const correlationId = (req.get('x-correlation-id') as string) ?? null;
 
     // Initialize context for this request
     const context: LogContext = {
@@ -95,11 +95,11 @@ export function tracingMiddleware() {
  * Middleware to catch and log errors
  */
 export function errorLoggingMiddleware() {
-  return (err: Error | any, req: Request, res: Response, _next: NextFunction) => {
+  return (err: Error | unknown, req: Request, res: Response, _next: NextFunction) => {
     const logger = getLogger();
 
-    const statusCode = err.statusCode || err.status || 500;
-    const message = err.message || 'Internal Server Error';
+    const statusCode = (err as any).statusCode ?? (err as any).status ?? 500;
+    const message = (err as any).message ?? 'Internal Server Error';
 
     logger.error(`Request error: ${message}`, {
       statusCode,
@@ -182,14 +182,14 @@ export function performanceMetricsMiddleware() {
 /**
  * Utility to add custom metadata to current request context
  */
-export function addMetadata(key: string, value: any): void {
+export function addMetadata(key: string, value: unknown): void {
   contextManager.addMetadata(key, value);
 }
 
 /**
  * Utility to sanitize request body
  */
-function sanitizeBody(body: any): any {
+function sanitizeBody(body: unknown): unknown {
   if (!body) return body;
   const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'authorization'];
   return sanitizeData(body, sensitiveFields);
@@ -198,7 +198,7 @@ function sanitizeBody(body: any): any {
 /**
  * Utility to sanitize data by removing sensitive fields
  */
-export function sanitizeData(data: any, sensitiveFields: string[]): any {
+export function sanitizeData(data: unknown, sensitiveFields: string[]): unknown {
   if (typeof data !== 'object' || data === null) {
     return data;
   }
@@ -207,7 +207,7 @@ export function sanitizeData(data: any, sensitiveFields: string[]): any {
     return data.map((item) => sanitizeData(item, sensitiveFields));
   }
 
-  const sanitized: Record<string, any> = {};
+  const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(data)) {
     if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
@@ -230,9 +230,9 @@ export function userContextMiddleware(
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
     const userId =
-      userIdExtractor?.(req) ||
-      (req.get('x-user-id') as string) ||
-      (req.user as any)?.id;
+      userIdExtractor?.(req) ??
+      (req.get('x-user-id') as string) ??
+      (req.user as unknown as any)?.id;
 
     if (userId) {
       contextManager.set('userId', userId);

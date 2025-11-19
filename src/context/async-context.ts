@@ -8,7 +8,7 @@ export type LogContext = {
   requestId?: string;
   sessionId?: string;
   correlationId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class ContextManager {
@@ -19,10 +19,10 @@ class ContextManager {
    */
   initContext(context?: Partial<LogContext>): LogContext {
     const newContext: LogContext = {
-      traceId: context?.traceId || uuidv4(),
-      spanId: context?.spanId || uuidv4(),
+      traceId: context?.traceId ?? uuidv4(),
+      spanId: context?.spanId ?? uuidv4(),
       userId: context?.userId,
-      requestId: context?.requestId || uuidv4(),
+      requestId: context?.requestId ?? uuidv4(),
       sessionId: context?.sessionId,
       correlationId: context?.correlationId,
       metadata: context?.metadata,
@@ -75,7 +75,7 @@ class ContextManager {
   /**
    * Add metadata to context
    */
-  addMetadata(key: string, value: any): void {
+  addMetadata(key: string, value: unknown): void {
     const context = this.getContext();
     if (!context.metadata) {
       context.metadata = {};

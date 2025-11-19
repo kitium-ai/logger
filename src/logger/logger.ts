@@ -90,6 +90,7 @@ export class CentralLogger implements ILogger {
             this.enrichWithContext(),
             winston.format.json(),
           ),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any),
       );
     }
@@ -161,12 +162,12 @@ export class CentralLogger implements ILogger {
     const match = sizeStr.toLowerCase().match(/^(\d+)([kmg])?b?$/);
     if (!match) return 100 * 1024 * 1024; // Default 100MB
     const value = parseInt(match[1], 10);
-    const unit = match[2] || 'b';
-    return value * (units[unit] || 1);
+    const unit = match[2] ?? 'b';
+    return value * (units[unit] ?? 1);
   }
 
-  error(message: string, meta?: any, error?: Error): void {
-    const errorInfo: any = { message };
+  error(message: string, meta?: unknown, error?: Error): void {
+    const errorInfo: Record<string, unknown> = { message };
     if (error) {
       errorInfo.error = error;
       errorInfo.stack = error.stack;
@@ -177,19 +178,19 @@ export class CentralLogger implements ILogger {
     this.logger.error(errorInfo);
   }
 
-  warn(message: string, meta?: any): void {
+  warn(message: string, meta?: unknown): void {
     this.logger.warn({ message, meta });
   }
 
-  info(message: string, meta?: any): void {
+  info(message: string, meta?: unknown): void {
     this.logger.info({ message, meta });
   }
 
-  http(message: string, meta?: any): void {
+  http(message: string, meta?: unknown): void {
     this.logger.log('http', { message, meta });
   }
 
-  debug(message: string, meta?: any): void {
+  debug(message: string, meta?: unknown): void {
     this.logger.debug({ message, meta });
   }
 
@@ -207,7 +208,7 @@ export class CentralLogger implements ILogger {
   /**
    * Create child logger with additional metadata
    */
-  child(metadata: Record<string, any>): ILogger {
+  child(metadata: Record<string, unknown>): ILogger {
     const childLogger = new CentralLogger(this.config);
     childLogger.logger = this.logger.child(metadata);
     return childLogger;
