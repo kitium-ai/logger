@@ -184,7 +184,7 @@ export async function exampleLoggerWithContext() {
 export function exampleDynamicLoggerType() {
   console.log('\n=== Dynamic Logger Type Example ===');
 
-  const loggerType = process.env.LOGGER_TYPE || 'console';
+  const loggerType = process.env.LOGGER_TYPE ?? 'console';
 
   const logger = LoggerFactory.createFromString(loggerType, {
     type: LoggerType.CONSOLE,

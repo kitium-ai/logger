@@ -16,28 +16,28 @@ export class ConsoleLogger implements ILogger {
     includeTimestamp?: boolean;
     colors?: boolean;
   } = {}) {
-    this.serviceName = options.serviceName || 'app';
+    this.serviceName = options.serviceName ?? 'app';
     this.includeTimestamp = options.includeTimestamp !== false;
     this.colors = options.colors !== false;
   }
 
-  error(message: string, meta?: any, error?: Error): void {
+  error(message: string, meta?: unknown, error?: Error): void {
     this.log('ERROR', message, meta, error);
   }
 
-  warn(message: string, meta?: any): void {
+  warn(message: string, meta?: unknown): void {
     this.log('WARN', message, meta);
   }
 
-  info(message: string, meta?: any): void {
+  info(message: string, meta?: unknown): void {
     this.log('INFO', message, meta);
   }
 
-  http(message: string, meta?: any): void {
+  http(message: string, meta?: unknown): void {
     this.log('HTTP', message, meta);
   }
 
-  debug(message: string, meta?: any): void {
+  debug(message: string, meta?: unknown): void {
     this.log('DEBUG', message, meta);
   }
 
@@ -49,7 +49,7 @@ export class ConsoleLogger implements ILogger {
     return contextManager.run(fullContext, () => fn());
   }
 
-  child(_metadata: Record<string, any>): ILogger {
+  child(_metadata: Record<string, unknown>): ILogger {
     // Return a new instance with metadata bound
     return this;
   }
@@ -59,7 +59,7 @@ export class ConsoleLogger implements ILogger {
     return Promise.resolve();
   }
 
-  private log(level: string, message: string, meta?: any, error?: Error): void {
+  private log(level: string, message: string, meta?: unknown, error?: Error): void {
     const context = contextManager.getContext();
     const timestamp = this.includeTimestamp ? `[${new Date().toISOString()}] ` : '';
     const colorCode = this.getColorCode(level);
@@ -113,6 +113,6 @@ export class ConsoleLogger implements ILogger {
       DEBUG: '\x1b[90m', // Gray
     };
 
-    return colors[level] || '';
+    return colors[level] ?? '';
   }
 }

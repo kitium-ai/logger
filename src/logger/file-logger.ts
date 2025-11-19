@@ -19,38 +19,40 @@ export class FileLogger implements ILogger {
     serviceName?: string;
     includeConsole?: boolean;
   } = {}) {
-    this.serviceName = options.serviceName || 'app';
+    this.serviceName = options.serviceName ?? 'app';
 
     const transports: winston.transport[] = [];
 
     // Daily rotating file
     transports.push(
       new DailyRotateFile({
-        filename: `${options.logPath || './logs'}/%DATE%.log`,
+        filename: `${options.logPath ?? './logs'}/%DATE%.log`,
         datePattern: 'YYYY-MM-DD',
-        maxSize: options.maxSize || '100m',
-        maxFiles: options.maxFiles || '14d',
+        maxSize: options.maxSize ?? '100m',
+        maxFiles: options.maxFiles ?? '14d',
         format: winston.format.combine(
           winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
           winston.format.errors({ stack: true }),
           winston.format.json(),
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any,
     );
 
     // Separate error log
     transports.push(
       new DailyRotateFile({
-        filename: `${options.logPath || './logs'}/error-%DATE%.log`,
+        filename: `${options.logPath ?? './logs'}/error-%DATE%.log`,
         datePattern: 'YYYY-MM-DD',
         level: 'error',
-        maxSize: options.maxSize || '100m',
-        maxFiles: options.maxFiles || '14d',
+        maxSize: options.maxSize ?? '100m',
+        maxFiles: options.maxFiles ?? '14d',
         format: winston.format.combine(
           winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
           winston.format.errors({ stack: true }),
           winston.format.json(),
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any,
     );
 
@@ -79,7 +81,7 @@ export class FileLogger implements ILogger {
     });
   }
 
-  error(message: string, meta?: any, error?: Error): void {
+  error(message: string, meta?: unknown, error?: Error): void {
     const logData = this.enrichLogData(meta);
     if (error) {
       logData.error = { message: error.message, stack: error.stack };
@@ -87,22 +89,22 @@ export class FileLogger implements ILogger {
     this.logger.error(message, logData);
   }
 
-  warn(message: string, meta?: any): void {
+  warn(message: string, meta?: unknown): void {
     const logData = this.enrichLogData(meta);
     this.logger.warn(message, logData);
   }
 
-  info(message: string, meta?: any): void {
+  info(message: string, meta?: unknown): void {
     const logData = this.enrichLogData(meta);
     this.logger.info(message, logData);
   }
 
-  http(message: string, meta?: any): void {
+  http(message: string, meta?: unknown): void {
     const logData = this.enrichLogData(meta);
     this.logger.log('info', message, logData);
   }
 
-  debug(message: string, meta?: any): void {
+  debug(message: string, meta?: unknown): void {
     const logData = this.enrichLogData(meta);
     this.logger.debug(message, logData);
   }
@@ -115,7 +117,7 @@ export class FileLogger implements ILogger {
     return contextManager.run(fullContext, () => fn());
   }
 
-  child(_metadata: Record<string, any>): ILogger {
+  child(_metadata: Record<string, unknown>): ILogger {
     // Return new instance with additional metadata
     return this;
   }
@@ -127,10 +129,10 @@ export class FileLogger implements ILogger {
     });
   }
 
-  private enrichLogData(meta?: any): any {
+  private enrichLogData(meta?: unknown): Record<string, unknown> {
     const context = contextManager.getContext();
     return {
-      ...meta,
+      ...(typeof meta === 'object' && meta !== null ? meta : {}),
       traceId: context.traceId,
       userId: context.userId,
       requestId: context.requestId,

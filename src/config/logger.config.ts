@@ -40,20 +40,20 @@ export type LoggerConfig = {
 }
 
 export const getLoggerConfig = (): LoggerConfig => {
-  const environment = (process.env.NODE_ENV || 'development') as
+  const environment = (process.env.NODE_ENV ?? 'development') as
     | 'development'
     | 'staging'
     | 'production';
 
-  const logLevel = (process.env.LOG_LEVEL || LogLevel.INFO) as LogLevel;
+  const logLevel = (process.env.LOG_LEVEL ?? LogLevel.INFO) as LogLevel;
 
   const lokiConfig: LokiConfig = {
     enabled: process.env.LOKI_ENABLED !== 'false',
-    host: process.env.LOKI_HOST || 'localhost',
-    port: parseInt(process.env.LOKI_PORT || '3100', 10),
-    protocol: (process.env.LOKI_PROTOCOL || 'http') as 'http' | 'https',
+    host: process.env.LOKI_HOST ?? 'localhost',
+    port: parseInt(process.env.LOKI_PORT ?? '3100', 10),
+    protocol: (process.env.LOKI_PROTOCOL ?? 'http') as 'http' | 'https',
     labels: {
-      service: process.env.SERVICE_NAME || 'default-service',
+      service: process.env.SERVICE_NAME ?? 'default-service',
       environment,
       ...parseLokiLabels(process.env.LOKI_LABELS),
     },
@@ -64,21 +64,21 @@ export const getLoggerConfig = (): LoggerConfig => {
         password: process.env.LOKI_PASSWORD,
       },
     }),
-    batchSize: parseInt(process.env.LOKI_BATCH_SIZE || '100', 10),
-    interval: parseInt(process.env.LOKI_INTERVAL || '5000', 10),
-    timeout: parseInt(process.env.LOKI_TIMEOUT || '10000', 10),
+    batchSize: parseInt(process.env.LOKI_BATCH_SIZE ?? '100', 10),
+    interval: parseInt(process.env.LOKI_INTERVAL ?? '5000', 10),
+    timeout: parseInt(process.env.LOKI_TIMEOUT ?? '10000', 10),
   };
 
   return {
-    serviceName: process.env.SERVICE_NAME || 'default-service',
+    serviceName: process.env.SERVICE_NAME ?? 'default-service',
     environment,
     logLevel,
     loki: lokiConfig,
     enableConsoleTransport: process.env.LOG_CONSOLE !== 'false',
     enableFileTransport: process.env.LOG_FILE_ENABLED === 'true',
-    fileLogPath: process.env.LOG_FILE_PATH || './logs',
-    maxFileSize: process.env.LOG_MAX_FILE_SIZE || '100m',
-    maxFiles: parseInt(process.env.LOG_MAX_FILES || '14', 10),
+    fileLogPath: process.env.LOG_FILE_PATH ?? './logs',
+    maxFileSize: process.env.LOG_MAX_FILE_SIZE ?? '100m',
+    maxFiles: parseInt(process.env.LOG_MAX_FILES ?? '14', 10),
     includeTimestamp: process.env.LOG_INCLUDE_TIMESTAMP !== 'false',
     includeMeta: process.env.LOG_INCLUDE_META !== 'false',
   };

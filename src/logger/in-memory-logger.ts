@@ -12,27 +12,27 @@ export class InMemoryLogger implements ILogger {
   private readonly serviceName: string;
 
   constructor(options: { maxSize?: number; serviceName?: string } = {}) {
-    this.maxSize = options.maxSize || 10000; // Keep last 10k logs
-    this.serviceName = options.serviceName || 'in-memory-service';
+    this.maxSize = options.maxSize ?? 10000; // Keep last 10k logs
+    this.serviceName = options.serviceName ?? 'in-memory-service';
   }
 
-  error(message: string, meta?: any, error?: Error): void {
+  error(message: string, meta?: unknown, error?: Error): void {
     this.addLog('error', message, meta, error);
   }
 
-  warn(message: string, meta?: any): void {
+  warn(message: string, meta?: unknown): void {
     this.addLog('warn', message, meta);
   }
 
-  info(message: string, meta?: any): void {
+  info(message: string, meta?: unknown): void {
     this.addLog('info', message, meta);
   }
 
-  http(message: string, meta?: any): void {
+  http(message: string, meta?: unknown): void {
     this.addLog('http', message, meta);
   }
 
-  debug(message: string, meta?: any): void {
+  debug(message: string, meta?: unknown): void {
     this.addLog('debug', message, meta);
   }
 
@@ -44,7 +44,7 @@ export class InMemoryLogger implements ILogger {
     return contextManager.run(fullContext, () => fn());
   }
 
-  child(_metadata: Record<string, any>): ILogger {
+  child(_metadata: Record<string, unknown>): ILogger {
     // Return a new instance with metadata bound (not used in in-memory)
     return this;
   }
@@ -109,7 +109,7 @@ export class InMemoryLogger implements ILogger {
     const byLevel: Record<string, number> = {};
 
     this.logs.forEach((log) => {
-      byLevel[log.level] = (byLevel[log.level] || 0) + 1;
+      byLevel[log.level] = (byLevel[log.level] ?? 0) + 1;
     });
 
     return {
@@ -134,7 +134,7 @@ export class InMemoryLogger implements ILogger {
     return JSON.stringify(this.getLogsByLevel(level), null, 2);
   }
 
-  private addLog(level: string, message: string, meta?: any, error?: Error): void {
+  private addLog(level: string, message: string, meta?: unknown, error?: Error): void {
     const context = contextManager.getContext();
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),

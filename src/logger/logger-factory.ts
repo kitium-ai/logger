@@ -38,12 +38,12 @@ export class LoggerFactory {
    * Create a logger based on type
    */
   static create(options: LoggerFactoryOptions): ILogger {
-    const serviceName = options.serviceName || 'app';
+    const serviceName = options.serviceName ?? 'app';
 
     switch (options.type) {
       case LoggerType.IN_MEMORY:
         return new InMemoryLogger({
-          maxSize: options.maxInMemoryLogs || 10000,
+          maxSize: options.maxInMemoryLogs ?? 10000,
           serviceName,
         });
 
@@ -56,9 +56,9 @@ export class LoggerFactory {
 
       case LoggerType.FILE:
         return new FileLogger({
-          logPath: options.logPath || './logs',
-          maxSize: options.maxSize || '100m',
-          maxFiles: options.maxFiles || '14d',
+          logPath: options.logPath ?? './logs',
+          maxSize: options.maxSize ?? '100m',
+          maxFiles: options.maxFiles ?? '14d',
           serviceName,
           includeConsole: options.includeConsole,
         });
