@@ -1,15 +1,17 @@
 import * as winston from 'winston';
 import * as DailyRotateFile from 'winston-daily-rotate-file';
-import { ILogger, LogEntry } from './logger.interface';
-import { contextManager, LogContext } from '../context/async-context';
+import type { ILogger } from './logger.interface';
+import { LogEntry } from './logger.interface';
+import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
 
 /**
  * File-based logger with rotation support
  * Stores logs to disk in JSON format
  */
 export class FileLogger implements ILogger {
-  private logger: winston.Logger;
-  private serviceName: string;
+  private readonly logger: winston.Logger;
+  private readonly serviceName: string;
 
   constructor(options: {
     logPath?: string;

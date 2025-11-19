@@ -1,9 +1,9 @@
-import { LogContext } from '../context/async-context';
+import type { LogContext } from '../context/async-context';
 
 /**
  * Abstract base interface for all logger implementations
  */
-export interface ILogger {
+export type ILogger = {
   error(message: string, meta?: any, error?: Error): void;
   warn(message: string, meta?: any): void;
   info(message: string, meta?: any): void;
@@ -17,7 +17,7 @@ export interface ILogger {
 /**
  * Log entry structure for storage
  */
-export interface LogEntry {
+export type LogEntry = {
   timestamp: string;
   level: string;
   message: string;

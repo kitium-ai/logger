@@ -10,7 +10,7 @@ export enum LogLevel {
   DEBUG = 'debug',
 }
 
-export interface LokiConfig {
+export type LokiConfig = {
   enabled: boolean;
   host: string;
   port: number;
@@ -25,7 +25,7 @@ export interface LokiConfig {
   timeout: number; // ms
 }
 
-export interface LoggerConfig {
+export type LoggerConfig = {
   serviceName: string;
   environment: 'development' | 'staging' | 'production';
   logLevel: LogLevel;
@@ -59,11 +59,11 @@ export const getLoggerConfig = (): LoggerConfig => {
     },
     ...(process.env.LOKI_USERNAME &&
       process.env.LOKI_PASSWORD && {
-        basicAuth: {
-          username: process.env.LOKI_USERNAME,
-          password: process.env.LOKI_PASSWORD,
-        },
-      }),
+      basicAuth: {
+        username: process.env.LOKI_USERNAME,
+        password: process.env.LOKI_PASSWORD,
+      },
+    }),
     batchSize: parseInt(process.env.LOKI_BATCH_SIZE || '100', 10),
     interval: parseInt(process.env.LOKI_INTERVAL || '5000', 10),
     timeout: parseInt(process.env.LOKI_TIMEOUT || '10000', 10),

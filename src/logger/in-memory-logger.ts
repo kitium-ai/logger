@@ -1,5 +1,6 @@
-import { ILogger, LogEntry } from './logger.interface';
-import { contextManager, LogContext } from '../context/async-context';
+import type { ILogger, LogEntry } from './logger.interface';
+import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
 
 /**
  * In-memory logger for testing, debugging, and development
@@ -7,8 +8,8 @@ import { contextManager, LogContext } from '../context/async-context';
  */
 export class InMemoryLogger implements ILogger {
   private logs: LogEntry[] = [];
-  private maxSize: number;
-  private serviceName: string;
+  private readonly maxSize: number;
+  private readonly serviceName: string;
 
   constructor(options: { maxSize?: number; serviceName?: string } = {}) {
     this.maxSize = options.maxSize || 10000; // Keep last 10k logs
@@ -104,7 +105,7 @@ export class InMemoryLogger implements ILogger {
     byLevel: Record<string, number>;
     oldestLog?: string;
     newestLog?: string;
-  } {
+    } {
     const byLevel: Record<string, number> = {};
 
     this.logs.forEach((log) => {

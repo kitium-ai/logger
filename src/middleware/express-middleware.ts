@@ -1,7 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getLogger } from '../logger/logger';
-import { contextManager, LogContext } from '../context/async-context';
+import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
 
 /**
  * Middleware to add tracing and context to all requests

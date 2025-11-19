@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { v4 as uuidv4 } from 'uuid';
 
-export interface LogContext {
+export type LogContext = {
   traceId: string;
   spanId?: string;
   userId?: string;
@@ -12,7 +12,7 @@ export interface LogContext {
 }
 
 class ContextManager {
-  private asyncLocalStorage = new AsyncLocalStorage<LogContext>();
+  private readonly asyncLocalStorage = new AsyncLocalStorage<LogContext>();
 
   /**
    * Initialize context for a new trace/request

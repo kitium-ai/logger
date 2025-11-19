@@ -1,14 +1,15 @@
-import { ILogger } from './logger.interface';
-import { contextManager, LogContext } from '../context/async-context';
+import type { ILogger } from './logger.interface';
+import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
 
 /**
  * Console-only logger for simple applications and development
  * Outputs formatted logs to stdout/stderr
  */
 export class ConsoleLogger implements ILogger {
-  private serviceName: string;
-  private includeTimestamp: boolean;
-  private colors: boolean;
+  private readonly serviceName: string;
+  private readonly includeTimestamp: boolean;
+  private readonly colors: boolean;
 
   constructor(options: {
     serviceName?: string;

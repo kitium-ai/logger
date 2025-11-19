@@ -1,9 +1,9 @@
-import { ILogger } from './logger.interface';
+import type { ILogger } from './logger.interface';
 import { CentralLogger } from './logger';
 import { InMemoryLogger } from './in-memory-logger';
 import { ConsoleLogger } from './console-logger';
 import { FileLogger } from './file-logger';
-import { LoggerConfig } from '../config/logger.config';
+import type { LoggerConfig } from '../config/logger.config';
 
 /**
  * Logger type enumeration
@@ -18,7 +18,7 @@ export enum LoggerType {
 /**
  * Logger factory options
  */
-export interface LoggerFactoryOptions {
+export type LoggerFactoryOptions = {
   type: LoggerType;
   serviceName?: string;
   logPath?: string;
@@ -90,14 +90,14 @@ export class LoggerFactory {
  */
 export class LoggerBuilder {
   private type: LoggerType = LoggerType.CENTRAL;
-  private serviceName: string = 'app';
-  private logPath: string = './logs';
-  private maxSize: string = '100m';
+  private serviceName = 'app';
+  private logPath = './logs';
+  private maxSize = '100m';
   private maxFiles: number | string = 14;
-  private maxInMemoryLogs: number = 10000;
-  private includeConsole: boolean = true;
-  private includeTimestamp: boolean = true;
-  private colors: boolean = true;
+  private maxInMemoryLogs = 10000;
+  private includeConsole = true;
+  private includeTimestamp = true;
+  private colors = true;
   private config?: LoggerConfig;
 
   /**
@@ -207,7 +207,7 @@ export class LoggerBuilder {
   /**
    * Build console logger (convenience method)
    */
-  static console(serviceName: string = 'app'): ILogger {
+  static console(serviceName = 'app'): ILogger {
     return new LoggerBuilder()
       .withType(LoggerType.CONSOLE)
       .withServiceName(serviceName)
@@ -217,7 +217,7 @@ export class LoggerBuilder {
   /**
    * Build file logger (convenience method)
    */
-  static file(serviceName: string = 'app', logPath: string = './logs'): ILogger {
+  static file(serviceName = 'app', logPath = './logs'): ILogger {
     return new LoggerBuilder()
       .withType(LoggerType.FILE)
       .withServiceName(serviceName)
@@ -228,7 +228,7 @@ export class LoggerBuilder {
   /**
    * Build in-memory logger (convenience method)
    */
-  static inMemory(serviceName: string = 'app', maxLogs: number = 10000): ILogger {
+  static inMemory(serviceName = 'app', maxLogs = 10000): ILogger {
     return new LoggerBuilder()
       .withType(LoggerType.IN_MEMORY)
       .withServiceName(serviceName)

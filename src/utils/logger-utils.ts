@@ -4,7 +4,7 @@ import { contextManager } from '../context/async-context';
 /**
  * Create a performance timer for measuring operation duration
  */
-export function createTimer(label: string = 'Operation') {
+export function createTimer(label = 'Operation') {
   const startTime = Date.now();
   const startMemory = process.memoryUsage().heapUsed;
 
@@ -178,7 +178,7 @@ export class BatchLogger {
 /**
  * Convert winston info object to structured log entry
  */
-export interface StructuredLogEntry {
+export type StructuredLogEntry = {
   timestamp: string;
   level: string;
   message: string;

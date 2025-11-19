@@ -1,8 +1,10 @@
 import * as winston from 'winston';
 import * as LokiTransport from 'winston-loki';
-import { ILogger } from './logger.interface';
-import { LoggerConfig, LogLevel } from '../config/logger.config';
-import { contextManager, LogContext } from '../context/async-context';
+import type { ILogger } from './logger.interface';
+import type { LoggerConfig } from '../config/logger.config';
+import { LogLevel } from '../config/logger.config';
+import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
 
 const customLevels = {
   levels: {
@@ -23,7 +25,7 @@ const customLevels = {
 
 export class CentralLogger implements ILogger {
   private logger: winston.Logger;
-  private config: LoggerConfig;
+  private readonly config: LoggerConfig;
 
   constructor(config: LoggerConfig) {
     this.config = config;
