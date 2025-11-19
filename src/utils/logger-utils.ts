@@ -152,7 +152,7 @@ export class BatchLogger {
     return this.add('debug', message, metadata);
   }
 
-  async flush(): Promise<void> {
+  flush(): void {
     const logger = getLogger();
     for (const log of this.logs) {
       if (log.level === 'error') {

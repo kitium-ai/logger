@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Examples demonstrating different logger types
  */
@@ -156,7 +157,7 @@ export function exampleGlobalLogger() {
 /**
  * Example 7: Logger with Context
  */
-export async function exampleLoggerWithContext() {
+export function exampleLoggerWithContext() {
   console.log('\n=== Logger with Context Example ===');
 
   const logger = LoggerBuilder.console('context-app');
@@ -169,7 +170,7 @@ export async function exampleLoggerWithContext() {
       requestId: 'req-789',
       sessionId: 'session-abc',
     },
-    async () => {
+    () => {
       logger.info('Processing user request');
       logger.debug('Validating input', { input: 'data' });
       logger.info('Request completed');

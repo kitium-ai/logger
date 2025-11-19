@@ -98,8 +98,10 @@ export function errorLoggingMiddleware() {
   return (err: Error | unknown, req: Request, res: Response, _next: NextFunction) => {
     const logger = getLogger();
 
-    const statusCode = (err as any).statusCode ?? (err as any).status ?? 500;
-    const message = (err as any).message ?? 'Internal Server Error';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const errAny = err as any;
+    const statusCode = errAny.statusCode ?? errAny.status ?? 500;
+    const message = errAny.message ?? 'Internal Server Error';
 
     logger.error(`Request error: ${message}`, {
       statusCode,
@@ -232,7 +234,8 @@ export function userContextMiddleware(
     const userId =
       userIdExtractor?.(req) ??
       (req.get('x-user-id') as string) ??
-      (req.user as unknown as any)?.id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (req.user as any)?.id;
 
     if (userId) {
       contextManager.set('userId', userId);

@@ -77,9 +77,7 @@ class ContextManager {
    */
   addMetadata(key: string, value: unknown): void {
     const context = this.getContext();
-    if (!context.metadata) {
-      context.metadata = {};
-    }
+    context.metadata ??= {};
     context.metadata[key] = value;
   }
 
