@@ -37,12 +37,12 @@ app.use(performanceMetricsMiddleware()); // Track performance
 app.use(
   userContextMiddleware((req) => {
     // Custom user ID extraction logic
-    return (req.headers['x-user-id'] as string) || undefined;
+    return (req.headers['x-user-id'] as string) ?? null;
   }),
 );
 
 // Routes
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   getLogger().info('Health check requested');
   res.json({
     status: 'healthy',
@@ -135,7 +135,7 @@ app.get('/api/slow', async (req: Request, res: Response) => {
   res.json({ message: 'This was a slow operation' });
 });
 
-app.get('/api/error', (req: Request, res: Response) => {
+app.get('/api/error', (_req: Request, _res: Response) => {
   throw new Error('Intentional error for testing');
 });
 

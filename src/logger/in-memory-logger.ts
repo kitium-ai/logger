@@ -44,7 +44,7 @@ export class InMemoryLogger implements ILogger {
     return contextManager.run(fullContext, () => fn());
   }
 
-  child(metadata: Record<string, any>): ILogger {
+  child(_metadata: Record<string, any>): ILogger {
     // Return a new instance with metadata bound (not used in in-memory)
     return this;
   }

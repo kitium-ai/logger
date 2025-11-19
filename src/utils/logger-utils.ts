@@ -1,5 +1,4 @@
 import { getLogger } from '../logger/logger';
-import { contextManager } from '../context/async-context';
 
 /**
  * Create a performance timer for measuring operation duration
@@ -50,7 +49,6 @@ export async function withErrorLogging<T>(
     timer.end(context?.metadata);
     return result;
   } catch (error) {
-    const duration = Date.now() - (context as any)?.startTime || 0;
     getLogger().error(`${operation} failed`, context?.metadata, error as Error);
     throw error;
   }

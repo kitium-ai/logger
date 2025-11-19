@@ -2,7 +2,6 @@ import * as winston from 'winston';
 import * as LokiTransport from 'winston-loki';
 import type { ILogger } from './logger.interface';
 import type { LoggerConfig } from '../config/logger.config';
-import { LogLevel } from '../config/logger.config';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
 

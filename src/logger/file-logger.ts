@@ -1,7 +1,6 @@
 import * as winston from 'winston';
 import * as DailyRotateFile from 'winston-daily-rotate-file';
 import type { ILogger } from './logger.interface';
-import { LogEntry } from './logger.interface';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
 
@@ -116,7 +115,7 @@ export class FileLogger implements ILogger {
     return contextManager.run(fullContext, () => fn());
   }
 
-  child(metadata: Record<string, any>): ILogger {
+  child(_metadata: Record<string, any>): ILogger {
     // Return new instance with additional metadata
     return this;
   }

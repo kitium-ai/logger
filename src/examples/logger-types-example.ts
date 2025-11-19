@@ -2,15 +2,10 @@
  * Examples demonstrating different logger types
  */
 
-import type {
-  InMemoryLogger } from '../index';
 import {
   LoggerBuilder,
   LoggerFactory,
   LoggerType,
-  ConsoleLogger,
-  FileLogger,
-  CentralLogger,
   getLoggerConfig,
 } from '../index';
 

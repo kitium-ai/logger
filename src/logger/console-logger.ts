@@ -49,7 +49,7 @@ export class ConsoleLogger implements ILogger {
     return contextManager.run(fullContext, () => fn());
   }
 
-  child(metadata: Record<string, any>): ILogger {
+  child(_metadata: Record<string, any>): ILogger {
     // Return a new instance with metadata bound
     return this;
   }

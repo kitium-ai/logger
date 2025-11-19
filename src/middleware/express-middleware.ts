@@ -19,9 +19,9 @@ export function tracingMiddleware() {
     const requestId = uuidv4();
 
     // Extract user info if available
-    const userId = (req.get('x-user-id') as string) || undefined;
-    const sessionId = (req.get('x-session-id') as string) || undefined;
-    const correlationId = (req.get('x-correlation-id') as string) || undefined;
+    const userId = (req.get('x-user-id') as string) || null;
+    const sessionId = (req.get('x-session-id') as string) || null;
+    const correlationId = (req.get('x-correlation-id') as string) || null;
 
     // Initialize context for this request
     const context: LogContext = {
@@ -95,7 +95,7 @@ export function tracingMiddleware() {
  * Middleware to catch and log errors
  */
 export function errorLoggingMiddleware() {
-  return (err: Error | any, req: Request, res: Response, next: NextFunction) => {
+  return (err: Error | any, req: Request, res: Response, _next: NextFunction) => {
     const logger = getLogger();
 
     const statusCode = err.statusCode || err.status || 500;
