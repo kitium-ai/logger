@@ -53,7 +53,9 @@
     "lint:fix": "eslint . --fix",
     "lint:tslint": "tslint -c tslint.json --project tsconfig.json '**/*.ts'",
     "lint:tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix '**/*.ts'",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "migrate": "node scripts/migrate.js",
+    "migrate:help": "node scripts/migrate.js --help"
   },
   "keywords": [
     "logging",
