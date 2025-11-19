@@ -85,7 +85,8 @@ class ContextManager {
    * Clear context
    */
   clear(): void {
-    this.asyncLocalStorage.exitSyncScope();
+    // AsyncLocalStorage doesn't have an exitSyncScope method
+    // Context is automatically cleared when exiting the async context
   }
 }
 
