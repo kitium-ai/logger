@@ -23,6 +23,7 @@ export default [
       '.cache',
       '.turbo',
       'coverage/',
+      'scripts/',
     ],
   },
   ...typeScriptConfig,
