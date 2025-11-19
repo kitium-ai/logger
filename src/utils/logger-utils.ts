@@ -190,7 +190,7 @@ export type StructuredLogEntry = {
   correlationId?: string;
   metadata?: Record<string, unknown>;
   stack?: string;
-}
+};
 
 /**
  * Create audit log entry (for compliance and security auditing)

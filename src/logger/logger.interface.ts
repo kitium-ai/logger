@@ -12,7 +12,7 @@ export type ILogger = {
   withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T>;
   child(metadata: Record<string, unknown>): ILogger;
   close(): Promise<void>;
-}
+};
 
 /**
  * Log entry structure for storage
@@ -34,4 +34,4 @@ export type LogEntry = {
     sessionId?: string;
     correlationId?: string;
   };
-}
+};

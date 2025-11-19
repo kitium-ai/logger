@@ -1,22 +1,20 @@
 # Centralized Logging System
 
-An enterprise-ready centralized logging system with structured logging and Grafana Loki integration for cloud-native applications.
+An enterprise-ready centralized logging system with structured logging and Grafana Loki integration
+for cloud-native applications.
 
 ## Features
 
-✅ **Multiple Logger Types** - Console, File, In-Memory, or Central (Loki) logging
-✅ **Structured Logging** - JSON-formatted logs with contextual metadata
-✅ **Distributed Tracing** - Automatic trace ID and span ID tracking
-✅ **Grafana Loki Integration** - Cloud-native log aggregation and analysis
-✅ **TypeScript Support** - Full type safety and excellent IDE support
-✅ **Express.js Middleware** - Out-of-the-box HTTP request/response logging
-✅ **Error Tracking** - Automatic error logging with stack traces
-✅ **Performance Metrics** - Request duration and memory usage tracking
-✅ **Request Context** - Async context for user, session, and request metadata
-✅ **Sensitive Data Filtering** - Automatic redaction of passwords, tokens, and API keys
-✅ **Builder Pattern** - Fluent API for easy logger configuration
-✅ **Log Levels** - error, warn, info, http, debug
-✅ **Audit Logging** - Compliance-ready audit trail support
+✅ **Multiple Logger Types** - Console, File, In-Memory, or Central (Loki) logging ✅ **Structured
+Logging** - JSON-formatted logs with contextual metadata ✅ **Distributed Tracing** - Automatic
+trace ID and span ID tracking ✅ **Grafana Loki Integration** - Cloud-native log aggregation and
+analysis ✅ **TypeScript Support** - Full type safety and excellent IDE support ✅ **Express.js
+Middleware** - Out-of-the-box HTTP request/response logging ✅ **Error Tracking** - Automatic error
+logging with stack traces ✅ **Performance Metrics** - Request duration and memory usage tracking ✅
+**Request Context** - Async context for user, session, and request metadata ✅ **Sensitive Data
+Filtering** - Automatic redaction of passwords, tokens, and API keys ✅ **Builder Pattern** - Fluent
+API for easy logger configuration ✅ **Log Levels** - error, warn, info, http, debug ✅ **Audit
+Logging** - Compliance-ready audit trail support
 
 ## Quick Start
 
@@ -225,25 +223,25 @@ LOKI_PROTOCOL=http
 
 ### Available Configuration Options
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NODE_ENV` | development | Environment (development, staging, production) |
-| `SERVICE_NAME` | default-service | Service name for log labels |
-| `LOG_LEVEL` | info | Minimum log level (error, warn, info, http, debug) |
-| `LOG_CONSOLE` | true | Enable console output |
-| `LOG_FILE_ENABLED` | false | Enable file logging |
-| `LOG_FILE_PATH` | ./logs | Log file directory |
-| `LOG_MAX_FILE_SIZE` | 100m | Max size per log file before rotation |
-| `LOG_MAX_FILES` | 14 | Max number of rotated log files |
-| `LOKI_ENABLED` | true | Enable Loki integration |
-| `LOKI_HOST` | localhost | Loki server host |
-| `LOKI_PORT` | 3100 | Loki server port |
-| `LOKI_PROTOCOL` | http | Protocol (http or https) |
-| `LOKI_BATCH_SIZE` | 100 | Number of logs to batch before sending |
-| `LOKI_INTERVAL` | 5000 | Time in ms between batch sends |
-| `LOKI_USERNAME` | - | Optional basic auth username |
-| `LOKI_PASSWORD` | - | Optional basic auth password |
-| `LOKI_LABELS` | - | Custom Loki labels (JSON or key=value) |
+| Variable            | Default         | Description                                        |
+| ------------------- | --------------- | -------------------------------------------------- |
+| `NODE_ENV`          | development     | Environment (development, staging, production)     |
+| `SERVICE_NAME`      | default-service | Service name for log labels                        |
+| `LOG_LEVEL`         | info            | Minimum log level (error, warn, info, http, debug) |
+| `LOG_CONSOLE`       | true            | Enable console output                              |
+| `LOG_FILE_ENABLED`  | false           | Enable file logging                                |
+| `LOG_FILE_PATH`     | ./logs          | Log file directory                                 |
+| `LOG_MAX_FILE_SIZE` | 100m            | Max size per log file before rotation              |
+| `LOG_MAX_FILES`     | 14              | Max number of rotated log files                    |
+| `LOKI_ENABLED`      | true            | Enable Loki integration                            |
+| `LOKI_HOST`         | localhost       | Loki server host                                   |
+| `LOKI_PORT`         | 3100            | Loki server port                                   |
+| `LOKI_PROTOCOL`     | http            | Protocol (http or https)                           |
+| `LOKI_BATCH_SIZE`   | 100             | Number of logs to batch before sending             |
+| `LOKI_INTERVAL`     | 5000            | Time in ms between batch sends                     |
+| `LOKI_USERNAME`     | -               | Optional basic auth username                       |
+| `LOKI_PASSWORD`     | -               | Optional basic auth password                       |
+| `LOKI_LABELS`       | -               | Custom Loki labels (JSON or key=value)             |
 
 ## Usage Guide
 
@@ -313,11 +311,10 @@ app.get('/api/users/:id', (req, res) => {
 import { LoggableError } from '@kitiumai/logger';
 
 // Create errors with structured metadata
-const error = new LoggableError(
-  'User not found',
-  'USER_NOT_FOUND',
-  { userId: '123', searchField: 'email' },
-);
+const error = new LoggableError('User not found', 'USER_NOT_FOUND', {
+  userId: '123',
+  searchField: 'email',
+});
 
 // Log with appropriate level
 error.log('warn');
@@ -463,13 +460,7 @@ const logger = new CentralLogger(config);
 import { bodyLoggingMiddleware } from '@kitiumai/logger';
 
 // Log request bodies but filter sensitive fields
-app.use(bodyLoggingMiddleware([
-  'password',
-  'token',
-  'apiKey',
-  'ssn',
-  'creditCard',
-]));
+app.use(bodyLoggingMiddleware(['password', 'token', 'apiKey', 'ssn', 'creditCard']));
 ```
 
 ### User Context Middleware
@@ -478,10 +469,12 @@ app.use(bodyLoggingMiddleware([
 import { userContextMiddleware } from '@kitiumai/logger';
 
 // Automatically extract user ID from request
-app.use(userContextMiddleware((req) => {
-  // Custom extraction logic
-  return req.user?.id || req.get('x-user-id');
-}));
+app.use(
+  userContextMiddleware((req) => {
+    // Custom extraction logic
+    return req.user?.id || req.get('x-user-id');
+  }),
+);
 ```
 
 ### Sanitizing Sensitive Data
@@ -502,6 +495,7 @@ const safe = sanitizeData(data, ['password', 'apiKey']);
 ## Production Recommendations
 
 ### 1. **Log Levels**
+
 ```env
 NODE_ENV=production
 LOG_LEVEL=info  # Only error, warn, info
@@ -510,6 +504,7 @@ LOG_FILE_ENABLED=true  # Enable file logging
 ```
 
 ### 2. **Loki Configuration**
+
 ```env
 LOKI_ENABLED=true
 LOKI_HOST=loki.company.com  # Use managed Loki or secure endpoint
@@ -520,6 +515,7 @@ LOKI_LABELS={"region":"us-west-2","cluster":"prod"}
 ```
 
 ### 3. **Error Handling**
+
 ```typescript
 // Ensure graceful shutdown
 process.on('SIGTERM', async () => {
@@ -529,11 +525,13 @@ process.on('SIGTERM', async () => {
 ```
 
 ### 4. **Resource Limits**
+
 - Set appropriate `LOKI_BATCH_SIZE` for your volume
 - Monitor memory usage with large batch sizes
 - Use file rotation to prevent disk space issues
 
 ### 5. **Monitoring**
+
 - Monitor Loki disk usage
 - Set up Grafana alerts for errors
 - Track logger performance with metrics
@@ -563,6 +561,7 @@ getLogger().info('test log');
 ### Memory issues
 
 Reduce batch size:
+
 ```env
 LOKI_BATCH_SIZE=25  # From default 100
 ```
@@ -570,6 +569,7 @@ LOKI_BATCH_SIZE=25  # From default 100
 ### High latency
 
 Increase interval to reduce frequency:
+
 ```env
 LOKI_INTERVAL=10000  # From default 5000 (10 seconds)
 ```
@@ -577,6 +577,7 @@ LOKI_INTERVAL=10000  # From default 5000 (10 seconds)
 ### Missing trace IDs
 
 Ensure middleware is first:
+
 ```typescript
 app.use(tracingMiddleware()); // Must be before other middleware
 ```
@@ -586,12 +587,7 @@ app.use(tracingMiddleware()); // Must be before other middleware
 Fully typed interfaces are available:
 
 ```typescript
-import {
-  LoggerConfig,
-  LokiConfig,
-  LogContext,
-  StructuredLogEntry,
-} from '@kitiumai/logger';
+import { LoggerConfig, LokiConfig, LogContext, StructuredLogEntry } from '@kitiumai/logger';
 
 // All configurations are type-safe
 ```
@@ -607,6 +603,7 @@ Contributions are welcome! Please read our contributing guidelines.
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section
 2. Review example applications
 3. Check Loki documentation: https://grafana.com/docs/loki/latest/

@@ -111,7 +111,8 @@ function printMigrationReport() {
   console.log(`  Debug module:                        ${stats.debug} occurrences`);
   console.log('─────────────────────────────────────────────────────────────\n');
 
-  const totalOccurrences = stats.console_log + stats.winston + stats.bunyan + stats.pino + stats.debug;
+  const totalOccurrences =
+    stats.console_log + stats.winston + stats.bunyan + stats.pino + stats.debug;
   console.log(`📈 Total logging statements found: ${totalOccurrences}\n`);
 
   if (stats.files.size > 0) {
@@ -160,7 +161,9 @@ function printMigrationGuide() {
 async function main() {
   console.log('\n🚀 Kitium Logger Migration Tool\n');
 
-  const targetDir = await question('Enter the project directory to scan (default: current directory): ');
+  const targetDir = await question(
+    'Enter the project directory to scan (default: current directory): ',
+  );
   const dir = targetDir.trim() || process.cwd();
 
   if (!fs.existsSync(dir)) {

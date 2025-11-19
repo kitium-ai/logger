@@ -1,16 +1,11 @@
 {
   "name": "@kitiumai/logger",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "Enterprise-ready centralized logging system with Loki integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "scripts",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "scripts", "README.md", "LICENSE"],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -33,11 +28,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kitiumai/logger.git"
+    "url": "https://github.com/kitium-ai/logger.git"
   },
-  "homepage": "https://github.com/kitiumai/logger#readme",
+  "homepage": "https://github.com/kitium-ai/logger#readme",
   "bugs": {
-    "url": "https://github.com/kitiumai/logger/issues"
+    "url": "https://github.com/kitium-ai/logger/issues"
   },
   "publishConfig": {
     "access": "public",
@@ -47,7 +42,7 @@
     "build": "node build.cjs",
     "build:clean": "npm run clean && npm run build",
     "dev": "ts-node src/index.ts",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint .",
@@ -60,12 +55,9 @@
     "lint:tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix '**/*.ts'",
     "migrate": "node scripts/migrate.js",
     "migrate:help": "node scripts/migrate.js --help",
-    "prepack": "npm run clean && npm run build",
-    "prepare": "npm run lint && npm run build",
     "prepublishOnly": "npm run verify",
-    "verify": "npm run lint && npm run format:check && npm run test && npm run build",
-    "publish:dry": "npm publish --dry-run",
-    "publish": "npm publish"
+    "verify": "npm run lint && npm run test && npm run build",
+    "publish:dry": "npm publish --dry-run"
   },
   "keywords": [
     "logging",

@@ -36,10 +36,7 @@ export class InMemoryLogger implements ILogger {
     this.addLog('debug', message, meta);
   }
 
-  withContext<T>(
-    context: Partial<LogContext>,
-    fn: () => T | Promise<T>,
-  ): T | Promise<T> {
+  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T> {
     const fullContext = contextManager.initContext(context);
     return contextManager.run(fullContext, () => fn());
   }

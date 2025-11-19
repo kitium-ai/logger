@@ -21,9 +21,7 @@ export function tracingMiddleware() {
   return (req: Request, res: Response, next: NextFunction) => {
     // Generate or extract trace ID
     const traceId =
-      (req.get('x-trace-id') as string) ??
-      (req.get('x-request-id') as string) ??
-      uuidv4();
+      (req.get('x-trace-id') as string) ?? (req.get('x-request-id') as string) ?? uuidv4();
 
     const spanId = uuidv4();
     const requestId = uuidv4();
@@ -137,7 +135,9 @@ export function errorLoggingMiddleware() {
 /**
  * Middleware to log request body (with sensitive data filtering)
  */
-export function bodyLoggingMiddleware(sensitiveFields: string[] = ['password', 'token', 'secret', 'apiKey']) {
+export function bodyLoggingMiddleware(
+  sensitiveFields: string[] = ['password', 'token', 'secret', 'apiKey'],
+) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
       const sanitized = sanitizeData(req.body, sensitiveFields);
@@ -238,9 +238,7 @@ export function sanitizeData(data: unknown, sensitiveFields: string[]): unknown 
 /**
  * Middleware to set user context from request
  */
-export function userContextMiddleware(
-  userIdExtractor?: (req: Request) => string | undefined,
-) {
+export function userContextMiddleware(userIdExtractor?: (req: Request) => string | undefined) {
   return (req: Request, res: Response, next: NextFunction) => {
     const userId =
       userIdExtractor?.(req) ??

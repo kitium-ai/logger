@@ -111,7 +111,10 @@ export async function exampleCentralLogger() {
   logger.error('Failed to connect to service', { service: 'payment-api' }, error);
 
   // Logs are sent to Loki and can be queried in Grafana
-  console.log('Logs sent to Loki at', `${config.loki.protocol}://${config.loki.host}:${config.loki.port}`);
+  console.log(
+    'Logs sent to Loki at',
+    `${config.loki.protocol}://${config.loki.host}:${config.loki.port}`,
+  );
 
   // Close logger to flush logs
   await logger.close();

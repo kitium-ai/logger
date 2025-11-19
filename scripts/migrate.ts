@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 #!/usr/bin/env node
 /**
  * Migration Script for Kitium Logger - TypeScript Version
@@ -85,7 +84,10 @@ function addFileMatch(filePath: string, lineNumber: number): void {
   stats.files.get(filePath)!.push(lineNumber);
 }
 
-function scanDirectory(dir: string, exclude: string[] = ['node_modules', '.git', 'dist', 'build']): void {
+function scanDirectory(
+  dir: string,
+  exclude: string[] = ['node_modules', '.git', 'dist', 'build'],
+): void {
   try {
     const files = fs.readdirSync(dir);
 
@@ -120,7 +122,8 @@ function printMigrationReport(): void {
   console.log(`  Debug module:                        ${stats.debug} occurrences`);
   console.log('─────────────────────────────────────────────────────────────\n');
 
-  const totalOccurrences = stats.console_log + stats.winston + stats.bunyan + stats.pino + stats.debug;
+  const totalOccurrences =
+    stats.console_log + stats.winston + stats.bunyan + stats.pino + stats.debug;
   console.log(`📈 Total logging statements found: ${totalOccurrences}\n`);
 
   if (stats.files.size > 0) {
@@ -169,7 +172,9 @@ function printMigrationGuide(): void {
 async function main(): Promise<void> {
   console.log('\n🚀 Kitium Logger Migration Tool (TypeScript)\n');
 
-  const targetDir = await question('Enter the project directory to scan (default: current directory): ');
+  const targetDir = await question(
+    'Enter the project directory to scan (default: current directory): ',
+  );
   const dir = targetDir.trim() || process.cwd();
 
   if (!fs.existsSync(dir)) {

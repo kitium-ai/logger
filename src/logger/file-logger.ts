@@ -12,13 +12,15 @@ export class FileLogger implements ILogger {
   private readonly logger: winston.Logger;
   private readonly serviceName: string;
 
-  constructor(options: {
-    logPath?: string;
-    maxSize?: string;
-    maxFiles?: number | string;
-    serviceName?: string;
-    includeConsole?: boolean;
-  } = {}) {
+  constructor(
+    options: {
+      logPath?: string;
+      maxSize?: string;
+      maxFiles?: number | string;
+      serviceName?: string;
+      includeConsole?: boolean;
+    } = {},
+  ) {
     this.serviceName = options.serviceName ?? 'app';
 
     const transports: winston.transport[] = [];
@@ -109,10 +111,7 @@ export class FileLogger implements ILogger {
     this.logger.debug(message, logData);
   }
 
-  withContext<T>(
-    context: Partial<LogContext>,
-    fn: () => T | Promise<T>,
-  ): T | Promise<T> {
+  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T> {
     const fullContext = contextManager.initContext(context);
     return contextManager.run(fullContext, () => fn());
   }

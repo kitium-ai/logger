@@ -23,7 +23,7 @@ export type LokiConfig = {
   batchSize: number;
   interval: number; // ms
   timeout: number; // ms
-}
+};
 
 export type LoggerConfig = {
   serviceName: string;
@@ -37,7 +37,7 @@ export type LoggerConfig = {
   maxFiles: number;
   includeTimestamp: boolean;
   includeMeta: boolean;
-}
+};
 
 export const getLoggerConfig = (): LoggerConfig => {
   const environment = (process.env.NODE_ENV ?? 'development') as

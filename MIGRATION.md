@@ -102,12 +102,14 @@ export const logger = {
 ### Example 1: console.log
 
 **Before:**
+
 ```typescript
 console.log('User logged in:', userId);
 console.error('Database error:', err.message);
 ```
 
 **After:**
+
 ```typescript
 logger.info('User logged in', { userId });
 logger.error('Database error', { message: err.message }, err);
@@ -116,6 +118,7 @@ logger.error('Database error', { message: err.message }, err);
 ### Example 2: Winston Logger
 
 **Before:**
+
 ```typescript
 import winston from 'winston';
 
@@ -132,6 +135,7 @@ logger.info('Request received', {
 ```
 
 **After:**
+
 ```typescript
 import { LoggerBuilder, LoggerType } from '@kitium-ai/centralized-logger';
 
@@ -146,6 +150,7 @@ logger.info('Request received', {
 ### Example 3: Pino Logger
 
 **Before:**
+
 ```typescript
 import pino from 'pino';
 
@@ -160,6 +165,7 @@ logger.info({ userId: '123' }, 'User action');
 ```
 
 **After:**
+
 ```typescript
 import { LoggerBuilder } from '@kitium-ai/centralized-logger';
 
@@ -171,6 +177,7 @@ logger.info('User action', { userId: '123' });
 ### Example 4: Bunyan Logger
 
 **Before:**
+
 ```typescript
 import bunyan from 'bunyan';
 
@@ -181,6 +188,7 @@ log.error({ err: error }, 'An error occurred');
 ```
 
 **After:**
+
 ```typescript
 import { LoggerBuilder } from '@kitium-ai/centralized-logger';
 
@@ -315,15 +323,12 @@ const logger = winston.createLogger({
 });
 
 // After (Kitium)
-await logger.withContext(
-  { userId: user.id, requestId: req.id },
-  async () => {
-    logger.info('Processing user request');
-    logger.debug('Loading data');
-    logger.info('Request complete');
-    // All logs include userId and requestId automatically
-  }
-);
+await logger.withContext({ userId: user.id, requestId: req.id }, async () => {
+  logger.info('Processing user request');
+  logger.debug('Loading data');
+  logger.info('Request complete');
+  // All logs include userId and requestId automatically
+});
 ```
 
 ### Pattern 2: Error Handling
@@ -423,9 +428,7 @@ import { LoggerBuilder, LoggerType } from '@kitium-ai/centralized-logger';
 
 const logger = LoggerBuilder.inMemory('test-app');
 // or
-const logger = new LoggerBuilder()
-  .withType(LoggerType.IN_MEMORY)
-  .build();
+const logger = new LoggerBuilder().withType(LoggerType.IN_MEMORY).build();
 ```
 
 ## Performance Tips
@@ -436,6 +439,7 @@ const logger = new LoggerBuilder()
    - Testing: `InMemoryLogger`
 
 2. **Batch operations:**
+
    ```typescript
    const batch = new BatchLogger();
    // ... add many logs ...
@@ -443,6 +447,7 @@ const logger = new LoggerBuilder()
    ```
 
 3. **Structured logging:**
+
    ```typescript
    // ✅ Good
    logger.info('User action', {

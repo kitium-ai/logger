@@ -11,11 +11,13 @@ export class ConsoleLogger implements ILogger {
   private readonly includeTimestamp: boolean;
   private readonly colors: boolean;
 
-  constructor(options: {
-    serviceName?: string;
-    includeTimestamp?: boolean;
-    colors?: boolean;
-  } = {}) {
+  constructor(
+    options: {
+      serviceName?: string;
+      includeTimestamp?: boolean;
+      colors?: boolean;
+    } = {},
+  ) {
     this.serviceName = options.serviceName ?? 'app';
     this.includeTimestamp = options.includeTimestamp !== false;
     this.colors = options.colors !== false;
@@ -41,10 +43,7 @@ export class ConsoleLogger implements ILogger {
     this.log('DEBUG', message, meta);
   }
 
-  withContext<T>(
-    context: Partial<LogContext>,
-    fn: () => T | Promise<T>,
-  ): T | Promise<T> {
+  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T> {
     const fullContext = contextManager.initContext(context);
     return contextManager.run(fullContext, () => fn());
   }
@@ -72,9 +71,7 @@ export class ConsoleLogger implements ILogger {
 
     // Add metadata
     if (meta && Object.keys(meta).length > 0) {
-      output += `\n  ${JSON.stringify(meta, null, 2)
-        .split('\n')
-        .join('\n  ')}`;
+      output += `\n  ${JSON.stringify(meta, null, 2).split('\n').join('\n  ')}`;
     }
 
     // Add error

@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "tslint:recommended"
-  ],
+  "extends": ["tslint:recommended"],
   "rules": {
     "no-console": {
       "severity": "warning"
@@ -15,10 +13,5 @@
       }
     ]
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    ".next"
-  ]
+  "exclude": ["node_modules", "dist", "build", ".next"]
 }

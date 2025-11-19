@@ -1,6 +1,7 @@
 # Migration Scripts
 
-This directory contains scripts to help migrate existing projects to use **@kitium-ai/centralized-logger**.
+This directory contains scripts to help migrate existing projects to use
+**@kitium-ai/centralized-logger**.
 
 ## Available Scripts
 
@@ -9,6 +10,7 @@ This directory contains scripts to help migrate existing projects to use **@kiti
 A Node.js script that analyzes your project and provides migration guidance.
 
 **Usage:**
+
 ```bash
 npm run migrate
 # or
@@ -16,6 +18,7 @@ node scripts/migrate.js
 ```
 
 **Features:**
+
 - Scans project for existing logging patterns
 - Detects console.log, Winston, Bunyan, Pino, and Debug usage
 - Generates migration report with statistics
@@ -23,6 +26,7 @@ node scripts/migrate.js
 - Identifies files that need updates
 
 **Example Output:**
+
 ```
 🚀 Kitium Logger Migration Tool
 
@@ -42,6 +46,7 @@ node scripts/migrate.js
 A TypeScript version of the migration script for advanced use cases.
 
 **Usage:**
+
 ```bash
 ts-node scripts/migrate.ts
 ```
@@ -57,6 +62,7 @@ npm run migrate
 ### Step 2: Review the Report
 
 The tool will show:
+
 - Total logging statements found
 - Types of loggers detected
 - Files that need updating
@@ -65,6 +71,7 @@ The tool will show:
 ### Step 3: Follow the Guide
 
 The tool provides:
+
 - Installation instructions
 - Code examples for your use case
 - Migration patterns
@@ -95,28 +102,33 @@ npm run lint
 The tool helps identify these common patterns:
 
 ### Pattern 1: Direct console usage
+
 ```typescript
 console.log('message');
 console.error('error');
 ```
 
 ### Pattern 2: Winston logger
+
 ```typescript
 logger.info('message', metadata);
 logger.error('error', metadata);
 ```
 
 ### Pattern 3: Pino logger
+
 ```typescript
 logger.info({ userId: '123' }, 'message');
 ```
 
 ### Pattern 4: Bunyan logger
+
 ```typescript
 log.info({ context }, 'message');
 ```
 
 ### Pattern 5: Debug module
+
 ```typescript
 debug('namespace:message');
 ```
@@ -158,6 +170,7 @@ npm run migrate -- --report migration-report.json
 ## Troubleshooting
 
 ### Script not found
+
 ```bash
 # Make sure scripts are executable
 chmod +x scripts/migrate.js
@@ -167,6 +180,7 @@ node scripts/migrate.js
 ```
 
 ### Permission denied
+
 ```bash
 # On Windows, you might need to use:
 node scripts/migrate.js
@@ -176,7 +190,9 @@ npm run migrate
 ```
 
 ### No loggers detected
-Your project might already be using other logging methods or have custom loggers. The tool will still provide recommendations.
+
+Your project might already be using other logging methods or have custom loggers. The tool will
+still provide recommendations.
 
 ## Advanced Usage
 
@@ -206,6 +222,7 @@ See [MIGRATION.md](../MIGRATION.md) for detailed examples and patterns.
 ## Support
 
 For issues or questions:
+
 - Check [MIGRATION.md](../MIGRATION.md)
 - Review [examples](../src/examples/)
 - Open an issue on GitHub

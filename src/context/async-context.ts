@@ -9,7 +9,7 @@ export type LogContext = {
   sessionId?: string;
   correlationId?: string;
   metadata?: Record<string, unknown>;
-}
+};
 
 class ContextManager {
   private readonly asyncLocalStorage = new AsyncLocalStorage<LogContext>();

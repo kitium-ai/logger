@@ -28,7 +28,7 @@ export type LoggerFactoryOptions = {
   includeConsole?: boolean;
   includeTimestamp?: boolean;
   colors?: boolean;
-}
+};
 
 /**
  * Factory for creating different logger types
@@ -208,10 +208,7 @@ export class LoggerBuilder {
    * Build console logger (convenience method)
    */
   static console(serviceName = 'app'): ILogger {
-    return new LoggerBuilder()
-      .withType(LoggerType.CONSOLE)
-      .withServiceName(serviceName)
-      .build();
+    return new LoggerBuilder().withType(LoggerType.CONSOLE).withServiceName(serviceName).build();
   }
 
   /**
