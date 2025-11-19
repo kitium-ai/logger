@@ -98,6 +98,7 @@ export class ConsoleLogger implements ILogger {
     }
 
     // Write to appropriate stream
+    // eslint-disable-next-line no-console
     const stream = level === 'ERROR' ? console.error : console.log;
     stream(output);
   }
