@@ -52,50 +52,58 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-app.get('/api/users/:id', async (req: Request, res: Response) => {
+app.get('/api/users/:id', (req: Request, res: Response) => {
   const timer = createTimer('Fetch user');
 
-  try {
-    const userId = req.params.id;
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      const userId = req.params.id;
 
-    // Add metadata to logs for this request
-    addMetadata('userId', userId);
+      // Add metadata to logs for this request
+      addMetadata('userId', userId);
 
-    // Simulate user lookup
-    await new Promise((resolve) => setTimeout(resolve, 100));
+      // Simulate user lookup
+      await new Promise((resolve) => {
+        setTimeout(resolve, 100);
+      });
 
-    if (userId === '999') {
-      throw new LoggableError('User not found', 'USER_NOT_FOUND', { userId });
+      if (userId === '999') {
+        throw new LoggableError('User not found', 'USER_NOT_FOUND', { userId });
+      }
+
+      const user = {
+        id: userId,
+        name: 'John Doe',
+        email: 'john@example.com',
+      };
+
+      timer.end({ userId });
+      res.json(user);
+    } catch (error) {
+      if (error instanceof LoggableError) {
+        error.log('warn');
+        res.status(404).json({ error: error.message, code: error.code });
+      } else {
+        throw error;
+      }
     }
-
-    const user = {
-      id: userId,
-      name: 'John Doe',
-      email: 'john@example.com',
-    };
-
-    timer.end({ userId });
-    res.json(user);
-  } catch (error) {
-    if (error instanceof LoggableError) {
-      error.log('warn');
-      res.status(404).json({ error: error.message, code: error.code });
-    } else {
-      throw error;
-    }
-  }
+  })();
 });
 
-app.post('/api/users', async (req: Request, res: Response) => {
+app.post('/api/users', (req: Request, res: Response) => {
   const { email, name } = req.body;
 
-  await withErrorLogging(
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  withErrorLogging(
     async () => {
       // Audit log for user creation
       auditLog('CREATE', 'user', req.get('x-user-id'), { email, name });
 
       // Simulate user creation
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 150);
+      });
 
       const newUser = { id: '123', email, name };
       res.status(201).json(newUser);
@@ -104,35 +112,45 @@ app.post('/api/users', async (req: Request, res: Response) => {
   );
 });
 
-app.get('/api/data', async (req: Request, res: Response) => {
+app.get('/api/data', (req: Request, res: Response) => {
   const timer = createTimer('Fetch data');
 
-  try {
-    // Simulate a long-running operation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    try {
+      // Simulate a long-running operation
+      await new Promise((resolve) => {
+        setTimeout(resolve, 2000);
+      });
 
-    getLogger().info('Data fetched successfully', {
-      recordCount: 100,
-      source: 'database',
-    });
+      getLogger().info('Data fetched successfully', {
+        recordCount: 100,
+        source: 'database',
+      });
 
-    timer.end({ recordCount: 100 });
+      timer.end({ recordCount: 100 });
 
-    res.json({
-      data: Array(100).fill({ id: 1, value: 'test' }),
-      total: 100,
-    });
-  } catch (error) {
-    getLogger().error('Failed to fetch data', {}, error as Error);
-    throw error;
-  }
+      res.json({
+        data: Array(100).fill({ id: 1, value: 'test' }),
+        total: 100,
+      });
+    } catch (error) {
+      getLogger().error('Failed to fetch data', {}, error as Error);
+      throw error;
+    }
+  })();
 });
 
-app.get('/api/slow', async (req: Request, res: Response) => {
+app.get('/api/slow', (req: Request, res: Response) => {
   // This will trigger slow request warning
-  await new Promise((resolve) => setTimeout(resolve, 2500));
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  (async () => {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 2500);
+    });
 
-  res.json({ message: 'This was a slow operation' });
+    res.json({ message: 'This was a slow operation' });
+  })();
 });
 
 app.get('/api/error', (_req: Request, _res: Response) => {
@@ -169,8 +187,14 @@ async function shutdown() {
   process.exit(0);
 }
 
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+process.on('SIGTERM', () => {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  shutdown();
+});
+process.on('SIGINT', () => {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  shutdown();
+});
 
 // Start server
 const server = app.listen(port, () => {
