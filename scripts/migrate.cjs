@@ -161,6 +161,67 @@ function printMigrationGuide() {
   logger.info('   MIGRATION.md in the project root\n');
 }
 
+function replaceLoggingStatements(content) {
+  // Add import if not present
+  if (!content.includes('LoggerBuilder')) {
+    const importStatement = "const { LoggerBuilder } = require('@kitium-ai/logger');\n";
+    const lastRequire = content.lastIndexOf('require(');
+    if (lastRequire !== -1) {
+      const lineEnd = content.indexOf('\n', lastRequire);
+      content = content.slice(0, lineEnd + 1) + importStatement + content.slice(lineEnd + 1);
+    } else {
+      content = importStatement + content;
+    }
+  }
+
+  // Initialize logger if not present
+  if (!content.includes('const logger = LoggerBuilder')) {
+    const requireEnd = content.lastIndexOf("require('");
+    if (requireEnd !== -1) {
+      const lineEnd = content.indexOf('\n', requireEnd);
+      const initStatement = "\nconst logger = LoggerBuilder.console('app');\n";
+      content = content.slice(0, lineEnd + 1) + initStatement + content.slice(lineEnd + 1);
+    }
+  }
+
+  // Replace console.log with logger.info
+  content = content.replace(/console\.log\(/g, 'logger.info(');
+  // Replace console.error with logger.error
+  content = content.replace(/console\.error\(/g, 'logger.error(');
+  // Replace console.warn with logger.warn
+  content = content.replace(/console\.warn\(/g, 'logger.warn(');
+  // Replace console.info with logger.info
+  content = content.replace(/console\.info\(/g, 'logger.info(');
+  // Replace console.debug with logger.debug
+  content = content.replace(/console\.debug\(/g, 'logger.debug(');
+
+  return content;
+}
+
+function performMigration(dir) {
+  const filesToMigrate = Array.from(stats.files.keys());
+  let migratedCount = 0;
+
+  filesToMigrate.forEach((filePath) => {
+    try {
+      let content = fs.readFileSync(filePath, 'utf-8');
+      const originalContent = content;
+
+      content = replaceLoggingStatements(content);
+
+      if (content !== originalContent) {
+        fs.writeFileSync(filePath, content, 'utf-8');
+        migratedCount++;
+        logger.info(`✅ Migrated: ${path.relative(dir, filePath)}`);
+      }
+    } catch (error) {
+      logger.error(`❌ Failed to migrate: ${filePath}`, error);
+    }
+  });
+
+  logger.info(`\n✨ Migration complete! ${migratedCount} files updated.\n`);
+}
+
 async function main() {
   logger.info('\n🚀 Kitium Logger Migration Tool\n');
 
@@ -181,6 +242,15 @@ async function main() {
 
   printMigrationReport();
   printMigrationGuide();
+
+  // Ask if user wants to perform migration
+  const shouldMigrate = await question('\nWould you like to automatically migrate the files? (yes/no): ');
+  if (shouldMigrate.toLowerCase() === 'yes' || shouldMigrate.toLowerCase() === 'y') {
+    logger.info('\n🔄 Starting migration...\n');
+    performMigration(dir);
+  } else {
+    logger.info('\nℹ️  Migration skipped. You can run this script again anytime.\n');
+  }
 
   rl.close();
 }
