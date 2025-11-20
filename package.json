@@ -58,8 +58,8 @@
     "setup:lint": "node node_modules/@kitiumai/lint/scripts/postinstall.js",
     "lint:tslint": "tslint -c tslint.json --project tsconfig.json '**/*.ts'",
     "lint:tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix '**/*.ts'",
-    "migrate": "node scripts/migrate.js",
-    "migrate:help": "node scripts/migrate.js --help",
+    "migrate": "node scripts/migrate.cjs",
+    "migrate:help": "node scripts/migrate.cjs --help",
     "prepublishOnly": "npm run verify",
     "verify": "npm run lint && npm run test && npm run build",
     "publish:dry": "npm publish --dry-run"

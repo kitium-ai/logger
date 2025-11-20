@@ -1,26 +1,18 @@
 #!/usr/bin/env node
+/* eslint-disable no-unused-vars */
 /**
- * Migration Script for Kitium Logger - TypeScript Version
+ * Migration Script for Kitium Logger
  * Helps migrate existing projects from other loggers to @kitium-ai/centralized-logger
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as readline from 'readline';
-import { LoggerBuilder } from '../index.js';
-
-interface MigrationStats {
-  console_log: number;
-  winston: number;
-  bunyan: number;
-  pino: number;
-  debug: number;
-  files: Map<string, number[]>;
-}
+const fs = require('fs');
+const path = require('path');
+const readline = require('readline');
+const { LoggerBuilder } = require('../dist/index.js');
 
 const logger = LoggerBuilder.console('migrate');
 
-const stats: MigrationStats = {
+const stats = {
   console_log: 0,
   winston: 0,
   bunyan: 0,
@@ -42,13 +34,13 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-function question(query: string): Promise<string> {
+function question(query) {
   return new Promise((resolve) => {
     rl.question(query, resolve);
   });
 }
 
-function scanFile(filePath: string): void {
+function scanFile(filePath) {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     const lines = content.split('\n');
@@ -80,17 +72,14 @@ function scanFile(filePath: string): void {
   }
 }
 
-function addFileMatch(filePath: string, lineNumber: number): void {
+function addFileMatch(filePath, lineNumber) {
   if (!stats.files.has(filePath)) {
     stats.files.set(filePath, []);
   }
-  stats.files.get(filePath)!.push(lineNumber);
+  stats.files.get(filePath).push(lineNumber);
 }
 
-function scanDirectory(
-  dir: string,
-  exclude: string[] = ['node_modules', '.git', 'dist', 'build'],
-): void {
+function scanDirectory(dir, exclude = ['node_modules', '.git', 'dist', 'build']) {
   try {
     const files = fs.readdirSync(dir);
 
@@ -111,7 +100,7 @@ function scanDirectory(
   }
 }
 
-function printMigrationReport(): void {
+function printMigrationReport() {
   logger.info('\n╔════════════════════════════════════════════════════════════╗');
   logger.info('║         Kitium Logger Migration Report                      ║');
   logger.info('╚════════════════════════════════════════════════════════════╝\n');
@@ -141,7 +130,7 @@ function printMigrationReport(): void {
   }
 }
 
-function printMigrationGuide(): void {
+function printMigrationGuide() {
   logger.info('\n📚 Migration Guide');
   logger.info('═════════════════════════════════════════════════════════════\n');
 
@@ -172,13 +161,13 @@ function printMigrationGuide(): void {
   logger.info('   MIGRATION.md in the project root\n');
 }
 
-function replaceLoggingStatements(content: string): string {
+function replaceLoggingStatements(content) {
   // Add import if not present
   if (!content.includes('LoggerBuilder')) {
-    const importStatement = "import { LoggerBuilder } from '@kitium-ai/logger';\n";
-    const lastImport = content.lastIndexOf('import ');
-    if (lastImport !== -1) {
-      const lineEnd = content.indexOf('\n', lastImport);
+    const importStatement = "const { LoggerBuilder } = require('@kitium-ai/logger');\n";
+    const lastRequire = content.lastIndexOf('require(');
+    if (lastRequire !== -1) {
+      const lineEnd = content.indexOf('\n', lastRequire);
       content = content.slice(0, lineEnd + 1) + importStatement + content.slice(lineEnd + 1);
     } else {
       content = importStatement + content;
@@ -187,10 +176,12 @@ function replaceLoggingStatements(content: string): string {
 
   // Initialize logger if not present
   if (!content.includes('const logger = LoggerBuilder')) {
-    const importEnd = content.lastIndexOf('import ');
-    const lineEnd = content.indexOf('\n', importEnd);
-    const initStatement = "\nconst logger = LoggerBuilder.console('app');\n";
-    content = content.slice(0, lineEnd + 1) + initStatement + content.slice(lineEnd + 1);
+    const requireEnd = content.lastIndexOf("require('");
+    if (requireEnd !== -1) {
+      const lineEnd = content.indexOf('\n', requireEnd);
+      const initStatement = "\nconst logger = LoggerBuilder.console('app');\n";
+      content = content.slice(0, lineEnd + 1) + initStatement + content.slice(lineEnd + 1);
+    }
   }
 
   // Replace console.log with logger.info
@@ -207,7 +198,7 @@ function replaceLoggingStatements(content: string): string {
   return content;
 }
 
-function performMigration(dir: string): void {
+function performMigration(dir) {
   const filesToMigrate = Array.from(stats.files.keys());
   let migratedCount = 0;
 
@@ -224,15 +215,15 @@ function performMigration(dir: string): void {
         logger.info(`✅ Migrated: ${path.relative(dir, filePath)}`);
       }
     } catch (error) {
-      logger.error(`❌ Failed to migrate: ${filePath}`, error as Error);
+      logger.error(`❌ Failed to migrate: ${filePath}`, error);
     }
   });
 
   logger.info(`\n✨ Migration complete! ${migratedCount} files updated.\n`);
 }
 
-async function main(): Promise<void> {
-  logger.info('\n🚀 Kitium Logger Migration Tool (TypeScript)\n');
+async function main() {
+  logger.info('\n🚀 Kitium Logger Migration Tool\n');
 
   const targetDir = await question(
     'Enter the project directory to scan (default: current directory): ',
@@ -266,6 +257,6 @@ async function main(): Promise<void> {
 
 // Run the migration tool
 main().catch((error) => {
-  logger.error('Error:', error as Error);
+  logger.error('Error:', error);
   process.exit(1);
 });
