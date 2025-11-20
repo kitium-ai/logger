@@ -253,7 +253,9 @@ async function main(): Promise<void> {
   printMigrationGuide();
 
   // Ask if user wants to perform migration
-  const shouldMigrate = await question('\nWould you like to automatically migrate the files? (yes/no): ');
+  const shouldMigrate = await question(
+    '\nWould you like to automatically migrate the files? (yes/no): ',
+  );
   if (shouldMigrate.toLowerCase() === 'yes' || shouldMigrate.toLowerCase() === 'y') {
     logger.info('\n🔄 Starting migration...\n');
     performMigration(dir);
