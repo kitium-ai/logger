@@ -28,7 +28,7 @@ export default [
   },
   ...baseConfig,
   ...typeScriptConfig,
-  ...securityConfig,
+  securityConfig,
   {
     name: 'project-overrides',
     files: ['**/*.{js,jsx,ts,tsx}'],
