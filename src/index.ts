@@ -53,5 +53,43 @@ export {
   StructuredLogEntry,
 } from './utils/logger-utils';
 
+// Error handling exports
+export {
+  retryWithBackoff,
+  CircuitBreaker,
+  safeAsync,
+  withGracefulDegradation,
+} from './utils/error-handler';
+export type { RetryConfig } from './utils/error-handler';
+
+// Metrics exports
+export {
+  Gauge,
+  Counter,
+  Histogram,
+  MetricsRegistry,
+  getMetricsRegistry,
+  loggerMetrics,
+} from './utils/metrics';
+export type { MetricValue, MetricLabels } from './utils/metrics';
+
+// Configuration validation exports
+export {
+  validateLoggerConfig,
+  assertValidConfig,
+  parseFileSize,
+  ConfigValidationError,
+} from './config/config-validator';
+export type { ValidationResult } from './config/config-validator';
+
+// Health check exports
+export {
+  performHealthCheck,
+  healthCheckMiddleware,
+  getHealthStatusMessage,
+  HealthStatus,
+} from './utils/health-check';
+export type { HealthCheckResult } from './utils/health-check';
+
 // Re-export common types
 export type { Request, Response, NextFunction } from 'express';
