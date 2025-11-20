@@ -7,6 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
+import { LoggerBuilder } from '../index.js';
 
 interface MigrationStats {
   console_log: number;
@@ -16,6 +17,8 @@ interface MigrationStats {
   debug: number;
   files: Map<string, number[]>;
 }
+
+const logger = LoggerBuilder.console('migrate');
 
 const stats: MigrationStats = {
   console_log: 0,
@@ -109,68 +112,68 @@ function scanDirectory(
 }
 
 function printMigrationReport(): void {
-  console.log('\n╔════════════════════════════════════════════════════════════╗');
-  console.log('║         Kitium Logger Migration Report                      ║');
-  console.log('╚════════════════════════════════════════════════════════════╝\n');
+  logger.info('\n╔════════════════════════════════════════════════════════════╗');
+  logger.info('║         Kitium Logger Migration Report                      ║');
+  logger.info('╚════════════════════════════════════════════════════════════╝\n');
 
-  console.log('📊 Logger Usage Summary:');
-  console.log('─────────────────────────────────────────────────────────────');
-  console.log(`  console.log/error/warn/info/debug:  ${stats.console_log} occurrences`);
-  console.log(`  Winston logger:                      ${stats.winston} occurrences`);
-  console.log(`  Bunyan logger:                       ${stats.bunyan} occurrences`);
-  console.log(`  Pino logger:                         ${stats.pino} occurrences`);
-  console.log(`  Debug module:                        ${stats.debug} occurrences`);
-  console.log('─────────────────────────────────────────────────────────────\n');
+  logger.info('📊 Logger Usage Summary:');
+  logger.info('─────────────────────────────────────────────────────────────');
+  logger.info(`  console.log/error/warn/info/debug:  ${stats.console_log} occurrences`);
+  logger.info(`  Winston logger:                      ${stats.winston} occurrences`);
+  logger.info(`  Bunyan logger:                       ${stats.bunyan} occurrences`);
+  logger.info(`  Pino logger:                         ${stats.pino} occurrences`);
+  logger.info(`  Debug module:                        ${stats.debug} occurrences`);
+  logger.info('─────────────────────────────────────────────────────────────\n');
 
   const totalOccurrences =
     stats.console_log + stats.winston + stats.bunyan + stats.pino + stats.debug;
-  console.log(`📈 Total logging statements found: ${totalOccurrences}\n`);
+  logger.info(`📈 Total logging statements found: ${totalOccurrences}\n`);
 
   if (stats.files.size > 0) {
-    console.log('📁 Files that need migration:');
-    console.log('─────────────────────────────────────────────────────────────');
+    logger.info('📁 Files that need migration:');
+    logger.info('─────────────────────────────────────────────────────────────');
     Array.from(stats.files.entries()).forEach(([file, lines]) => {
       const relPath = path.relative(process.cwd(), file);
-      console.log(`  ${relPath}`);
-      console.log(`    Lines: ${lines.join(', ')}`);
+      logger.info(`  ${relPath}`);
+      logger.info(`    Lines: ${lines.join(', ')}`);
     });
-    console.log('');
+    logger.info('');
   }
 }
 
 function printMigrationGuide(): void {
-  console.log('\n📚 Migration Guide');
-  console.log('═════════════════════════════════════════════════════════════\n');
+  logger.info('\n📚 Migration Guide');
+  logger.info('═════════════════════════════════════════════════════════════\n');
 
-  console.log('1️⃣  Install the package:');
-  console.log('   npm install @kitium-ai/centralized-logger\n');
+  logger.info('1️⃣  Install the package:');
+  logger.info('   npm install @kitium-ai/centralized-logger\n');
 
-  console.log('2️⃣  Basic setup in your app entry point:\n');
-  console.log('   TypeScript:');
-  console.log('   ┌─────────────────────────────────────────────────────────┐');
-  console.log('   │ import { LoggerBuilder, LoggerType } from                │');
-  console.log('   │   "@kitium-ai/centralized-logger";                      │');
-  console.log('   │                                                           │');
-  console.log('   │ const logger = LoggerBuilder.console("my-app");          │');
-  console.log('   │ // or for file logging:                                 │');
-  console.log('   │ const logger = LoggerBuilder.file("my-app", "./logs");  │');
-  console.log('   │                                                           │');
-  console.log('   │ // use it                                               │');
-  console.log('   │ logger.info("App started", { version: "1.0.0" });       │');
-  console.log('   └─────────────────────────────────────────────────────────┘\n');
+  logger.info('2️⃣  Basic setup in your app entry point:\n');
+  logger.info('   TypeScript:');
+  logger.info('   ┌─────────────────────────────────────────────────────────┐');
+  logger.info('   │ import { LoggerBuilder, LoggerType } from                │');
+  logger.info('   │   "@kitium-ai/centralized-logger";                      │');
+  logger.info('   │                                                           │');
+  logger.info('   │ const logger = LoggerBuilder.console("my-app");          │');
+  logger.info('   │ // or for file logging:                                 │');
+  logger.info('   │ const logger = LoggerBuilder.file("my-app", "./logs");  │');
+  logger.info('   │                                                           │');
+  logger.info('   │ // use it                                               │');
+  logger.info('   │ logger.info("App started", { version: "1.0.0" });       │');
+  logger.info('   └─────────────────────────────────────────────────────────┘\n');
 
-  console.log('3️⃣  Available logger types:\n');
-  console.log('   • ConsoleLogger  - Simple console output (development)');
-  console.log('   • FileLogger     - File-based with rotation (production)');
-  console.log('   • InMemoryLogger - In-memory storage (testing)');
-  console.log('   • CentralLogger  - Cloud-native with Loki (cloud)\n');
+  logger.info('3️⃣  Available logger types:\n');
+  logger.info('   • ConsoleLogger  - Simple console output (development)');
+  logger.info('   • FileLogger     - File-based with rotation (production)');
+  logger.info('   • InMemoryLogger - In-memory storage (testing)');
+  logger.info('   • CentralLogger  - Cloud-native with Loki (cloud)\n');
 
-  console.log('📖 For more examples and migration details, see:');
-  console.log('   MIGRATION.md in the project root\n');
+  logger.info('📖 For more examples and migration details, see:');
+  logger.info('   MIGRATION.md in the project root\n');
 }
 
 async function main(): Promise<void> {
-  console.log('\n🚀 Kitium Logger Migration Tool (TypeScript)\n');
+  logger.info('\n🚀 Kitium Logger Migration Tool (TypeScript)\n');
 
   const targetDir = await question(
     'Enter the project directory to scan (default: current directory): ',
@@ -178,12 +181,12 @@ async function main(): Promise<void> {
   const dir = targetDir.trim() || process.cwd();
 
   if (!fs.existsSync(dir)) {
-    console.error(`❌ Directory not found: ${dir}`);
+    logger.error(`❌ Directory not found: ${dir}`);
     process.exit(1);
   }
 
-  console.log(`\n📂 Scanning directory: ${dir}\n`);
-  console.log('Scanning files...');
+  logger.info(`\n📂 Scanning directory: ${dir}\n`);
+  logger.info('Scanning files...');
 
   scanDirectory(dir);
 
@@ -195,6 +198,6 @@ async function main(): Promise<void> {
 
 // Run the migration tool
 main().catch((error) => {
-  console.error('Error:', error);
+  logger.error('Error:', error as Error);
   process.exit(1);
 });
