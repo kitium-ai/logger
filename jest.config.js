@@ -1,9 +1,9 @@
-export default {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
+const baseConfig = require('@kitiumai/config/jest.config.base.js');
+
+module.exports = {
+  ...baseConfig,
   rootDir: './',
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
-  moduleFileExtensions: ['ts', 'js', 'json'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.interface.ts',
@@ -20,9 +20,6 @@ export default {
     },
   },
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  transform: {
-    '^.+\\.tsx?$': 'ts-jest',
-  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },

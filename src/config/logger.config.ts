@@ -39,6 +39,7 @@ export type LoggerConfig = {
   includeMeta: boolean;
 };
 
+/* eslint-disable complexity */
 export const getLoggerConfig = (): LoggerConfig => {
   const environment = (process.env.NODE_ENV ?? 'development') as
     | 'development'

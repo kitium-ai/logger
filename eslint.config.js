@@ -33,7 +33,30 @@ export default [
     name: 'project-overrides',
     files: ['**/*.{js,jsx,ts,tsx}'],
     rules: {
-      // Add your project-specific rule overrides here
+      // Allow undefined in tests
+      'no-undefined': 'off',
+      // Allow require-await for methods that return promises but don't need await
+      'require-await': 'off',
+      '@typescript-eslint/require-await': 'off',
+    },
+  },
+  {
+    name: 'naming-convention-overrides',
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      // Allow UPPER_CASE for constants and any format for object literal properties
+      '@typescript-eslint/naming-convention': [
+        'error',
+        {
+          selector: 'variable',
+          modifiers: ['const'],
+          format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
+        },
+        {
+          selector: 'objectLiteralProperty',
+          format: null, // Allow any format for object literal properties (needed for HTTP headers)
+        },
+      ],
     },
   },
 ];

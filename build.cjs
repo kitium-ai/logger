@@ -1,45 +1,62 @@
 #!/usr/bin/env node
 /**
  * Build script that compiles TypeScript and copies scripts folder
+ * Uses @kitiumai/scripts utilities for better error handling and logging
  */
 
-const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { promises: fsPromises } = require('fs');
 
 const distDir = path.join(__dirname, 'dist');
 const scriptsDir = path.join(__dirname, 'scripts');
 const distScriptsDir = path.join(distDir, 'scripts');
 
-try {
-  // Run TypeScript compilation
-  console.log('📦 Compiling TypeScript...');
-  execSync('tsc', { stdio: 'inherit' });
+async function compileTypeScript() {
+  const { exec, log } = await import('@kitiumai/scripts/utils');
+  log('info', '📦 Compiling TypeScript...');
+  await exec('tsc', [], { verbose: true, throwOnError: true });
+}
 
-  // Copy scripts folder to dist
-  console.log('📋 Copying scripts folder...');
+async function copyScripts() {
+  const { log, pathExists } = await import('@kitiumai/scripts/utils');
+  log('info', '📋 Copying scripts folder...');
 
-  // Create scripts directory in dist if it doesn't exist
-  if (!fs.existsSync(distScriptsDir)) {
-    fs.mkdirSync(distScriptsDir, { recursive: true });
+  if (!(await pathExists(distScriptsDir))) {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await fsPromises.mkdir(distScriptsDir, { recursive: true });
   }
 
-  // Copy all files from scripts to dist/scripts
-  const files = fs.readdirSync(scriptsDir);
-  files.forEach((file) => {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  const files = await fsPromises.readdir(scriptsDir);
+  for (const file of files) {
     const src = path.join(scriptsDir, file);
     const dst = path.join(distScriptsDir, file);
-    const stat = fs.statSync(src);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    const stat = await fsPromises.stat(src);
 
     if (stat.isFile()) {
-      fs.copyFileSync(src, dst);
-      console.log(`  ✓ Copied ${file}`);
+      await fsPromises.copyFile(src, dst);
+      log('info', `  ✓ Copied ${file}`);
     }
-  });
-
-  console.log('✅ Build complete!');
-  process.exit(0);
-} catch (error) {
-  console.error('❌ Build failed:', error.message);
-  process.exit(1);
+  }
 }
+
+async function build() {
+  try {
+    await compileTypeScript();
+    await copyScripts();
+    const { log } = await import('@kitiumai/scripts/utils');
+    log('success', '✅ Build complete!');
+    process.exit(0);
+  } catch (error) {
+    if (error.code === 'ERR_REQUIRE_ESM' || error.message?.includes('Cannot use import')) {
+      console.error('❌ Build failed:', error.message);
+      console.error('Note: Using fallback logging. @kitiumai/scripts may not be available.');
+    } else {
+      console.error('❌ Build failed:', error.message);
+    }
+    process.exit(1);
+  }
+}
+
+build();

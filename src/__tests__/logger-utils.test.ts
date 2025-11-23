@@ -7,9 +7,14 @@ import {
   logFunctionCall,
   BatchLogger,
 } from '../utils/logger-utils';
-import { LogLevel } from '../config/logger.config';
-import { getLogger, initializeLogger } from '../index';
 
+
+/* eslint-disable sonarjs/no-duplicate-string -- Constant definition, used throughout tests */
+const TEST_OPERATION = 'Test operation';
+const TEST_ERROR = 'Test error';
+const TEST_ERROR_CODE = 'TEST_ERROR';
+
+/* eslint-disable max-lines-per-function */
 describe('Logger Utils', () => {
   beforeEach(() => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -25,13 +30,13 @@ describe('Logger Utils', () => {
 
   describe('createTimer', () => {
     it('should create a timer instance', () => {
-      const timer = createTimer('Test operation');
+      const timer = createTimer(TEST_OPERATION);
       expect(timer).toBeDefined();
       expect(timer.end).toBeDefined();
     });
 
     it('should measure elapsed time', (done) => {
-      const timer = createTimer('Test operation');
+      const timer = createTimer(TEST_OPERATION);
       setTimeout(() => {
         const metadata = timer.end();
         expect(metadata.duration).toBeGreaterThan(0);
@@ -40,7 +45,7 @@ describe('Logger Utils', () => {
     });
 
     it('should accept additional metadata', (done) => {
-      const timer = createTimer('Test operation');
+      const timer = createTimer(TEST_OPERATION);
       setTimeout(() => {
         const metadata = timer.end({ userId: 'user-123' });
         expect(metadata.duration).toBeGreaterThan(0);
@@ -50,7 +55,7 @@ describe('Logger Utils', () => {
     });
 
     it('should handle multiple end calls', () => {
-      const timer = createTimer('Test operation');
+      const timer = createTimer(TEST_OPERATION);
       const meta1 = timer.end();
       const meta2 = timer.end();
       expect(meta1.duration).toBeGreaterThan(0);
@@ -75,18 +80,19 @@ describe('Logger Utils', () => {
     });
 
     it('should have log method', () => {
-      const error = new LoggableError('Test error', 'TEST_ERROR', {});
+      const error = new LoggableError(TEST_ERROR, TEST_ERROR_CODE, {});
       expect(error.log).toBeDefined();
-      expect(typeof error.log).toBe('function');
+
+      expect(typeof error.log).toBe(TYPE_FUNCTION);
     });
 
     it('should handle empty metadata', () => {
-      const error = new LoggableError('Test error', 'TEST_ERROR', {});
+      const error = new LoggableError(TEST_ERROR, TEST_ERROR_CODE, {});
       expect(error.metadata).toEqual({});
     });
 
     it('should support logging with different levels', () => {
-      const error = new LoggableError('Test error', 'TEST_ERROR', {});
+      const error = new LoggableError(TEST_ERROR, TEST_ERROR_CODE, {});
       expect(() => {
         error.log('info');
         error.log('warn');
@@ -126,7 +132,7 @@ describe('Logger Utils', () => {
           operation: 'User creation',
           metadata: { userId: '123' },
         });
-      } catch (error) {
+      } catch {
         // Error expected
       }
       expect(callback).toHaveBeenCalled();
@@ -164,7 +170,7 @@ describe('Logger Utils', () => {
     it('should wrap function for logging', () => {
       const testFn = (a: number, b: number) => a + b;
       const wrapped = logFunctionCall(testFn, 'add');
-      expect(typeof wrapped).toBe('function');
+      expect(typeof wrapped).toBe(TYPE_FUNCTION);
     });
 
     it('should execute wrapped function', () => {
@@ -222,9 +228,11 @@ describe('Logger Utils', () => {
       expect(result).toBe(logger);
     });
 
+    const TEST_MESSAGE = 'Test message';
+
     it('should flush logs', () => {
       const logger = new BatchLogger();
-      logger.info('Test message', {});
+      logger.info(TEST_MESSAGE, {});
       expect(() => {
         logger.flush();
       }).not.toThrow();
@@ -232,7 +240,7 @@ describe('Logger Utils', () => {
 
     it('should clear logs', () => {
       const logger = new BatchLogger();
-      logger.info('Test message', {});
+      logger.info(TEST_MESSAGE, {});
       logger.clear();
       expect(logger).toBeDefined();
     });

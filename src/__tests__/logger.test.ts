@@ -2,6 +2,7 @@ import { CentralLogger } from '../logger/logger';
 import { LogLevel } from '../config/logger.config';
 import type { LoggerConfig } from '../config/logger.config';
 
+/* eslint-disable max-lines-per-function */
 describe('CentralLogger', () => {
   let logger: CentralLogger;
   let mockConfig: LoggerConfig;
@@ -70,7 +71,6 @@ describe('CentralLogger', () => {
     });
 
     it('should log at info level', () => {
-      const spy = jest.fn();
       expect(() => {
         logger.info('Test message', { userId: '123' });
       }).not.toThrow();

@@ -31,6 +31,7 @@ export class CentralLogger implements ILogger {
     this.logger = this.createLogger();
   }
 
+  /* eslint-disable max-lines-per-function */
   private createLogger(): winston.Logger {
     const transports: winston.transport[] = [];
 
@@ -163,6 +164,7 @@ export class CentralLogger implements ILogger {
     if (!match) return 100 * 1024 * 1024; // Default 100MB
     const value = parseInt(match[1], 10);
     const unit = match[2] ?? 'b';
+    // eslint-disable-next-line security/detect-object-injection
     return value * (units[unit] ?? 1);
   }
 

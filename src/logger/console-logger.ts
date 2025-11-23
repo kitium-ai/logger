@@ -53,11 +53,12 @@ export class ConsoleLogger implements ILogger {
     return this;
   }
 
-  async close(): Promise<void> {
+  close(): Promise<void> {
     // Nothing to close
     return Promise.resolve();
   }
 
+  /* eslint-disable complexity, sonarjs/cognitive-complexity, max-statements */
   private log(level: string, message: string, meta?: unknown, error?: Error): void {
     const context = contextManager.getContext();
     const timestamp = this.includeTimestamp ? `[${new Date().toISOString()}] ` : '';
@@ -111,6 +112,7 @@ export class ConsoleLogger implements ILogger {
       DEBUG: '\x1b[90m', // Gray
     };
 
+    // eslint-disable-next-line security/detect-object-injection
     return colors[level] ?? '';
   }
 }

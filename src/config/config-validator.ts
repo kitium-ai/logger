@@ -18,7 +18,7 @@ export class ConfigValidationError extends Error {
 /**
  * Validation result with errors and warnings
  */
-export interface ValidationResult {
+export type ValidationResult = {
   valid: boolean;
   errors: ConfigValidationError[];
   warnings: string[];
@@ -27,6 +27,7 @@ export interface ValidationResult {
 /**
  * Validates LoggerConfig and returns validation results
  */
+/* eslint-disable max-lines-per-function, max-statements, complexity, sonarjs/cognitive-complexity */
 export function validateLoggerConfig(config: LoggerConfig): ValidationResult {
   const errors: ConfigValidationError[] = [];
   const warnings: string[] = [];

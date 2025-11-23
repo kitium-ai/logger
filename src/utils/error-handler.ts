@@ -3,7 +3,7 @@ import { getLogger } from '../logger/logger';
 /**
  * Exponential backoff retry configuration
  */
-export interface RetryConfig {
+export type RetryConfig = {
   maxRetries?: number;
   initialDelayMs?: number;
   maxDelayMs?: number;
@@ -13,6 +13,7 @@ export interface RetryConfig {
 /**
  * Retry an async function with exponential backoff
  */
+/* eslint-disable complexity */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   config: RetryConfig = {},
@@ -48,7 +49,11 @@ export async function retryWithBackoff<T>(
       });
 
       // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, actualDelay));
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, actualDelay);
+      });
 
       // Increase delay for next iteration
       delay = Math.min(delay * backoffMultiplier, maxDelayMs);
@@ -61,7 +66,7 @@ export async function retryWithBackoff<T>(
     lastError: lastError?.message,
   });
 
-  throw lastError || new Error('Failed after all retries');
+  throw lastError ?? new Error('Failed after all retries');
 }
 
 /**
@@ -73,8 +78,8 @@ export class CircuitBreaker<T> {
   private state: 'closed' | 'open' | 'half-open' = 'closed';
 
   constructor(
-    private fn: () => Promise<T>,
-    private config: {
+    private readonly fn: () => Promise<T>,
+    private readonly config: {
       failureThreshold?: number;
       resetTimeoutMs?: number;
       onStateChange?: (newState: string) => void;

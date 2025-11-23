@@ -5,9 +5,13 @@ import {
   bodyLoggingMiddleware,
   userContextMiddleware,
 } from '../middleware/express-middleware';
-import { LogLevel } from '../config/logger.config';
 import type { Request, Response, NextFunction } from 'express';
 
+const HTTP_METHOD_GET = 'GET';
+const TYPE_FUNCTION = 'function';
+const TRACING_MIDDLEWARE = 'tracingMiddleware';
+
+/* eslint-disable max-lines-per-function */
 describe('Express Middleware', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
@@ -15,7 +19,7 @@ describe('Express Middleware', () => {
 
   beforeEach(() => {
     mockRequest = {
-      method: 'GET',
+      method: HTTP_METHOD_GET,
       path: '/api/users',
       headers: {
         'x-user-id': 'user-123',
@@ -55,10 +59,12 @@ describe('Express Middleware', () => {
     jest.restoreAllMocks();
   });
 
-  describe('tracingMiddleware', () => {
+
+  describe(TRACING_MIDDLEWARE, () => {
     it('should create middleware function', () => {
+
       const middleware = tracingMiddleware();
-      expect(typeof middleware).toBe('function');
+      expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
 
     it('should call next middleware', (done) => {
@@ -121,7 +127,7 @@ describe('Express Middleware', () => {
   describe('performanceMetricsMiddleware', () => {
     it('should create middleware function', () => {
       const middleware = performanceMetricsMiddleware();
-      expect(typeof middleware).toBe('function');
+      expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
 
     it('should call next middleware', (done) => {
@@ -154,7 +160,7 @@ describe('Express Middleware', () => {
   describe('errorLoggingMiddleware', () => {
     it('should create middleware function', () => {
       const middleware = errorLoggingMiddleware();
-      expect(typeof middleware).toBe('function');
+      expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
 
     it('should have 4 parameters for error handling', () => {
@@ -166,7 +172,7 @@ describe('Express Middleware', () => {
   describe('bodyLoggingMiddleware', () => {
     it('should create middleware function', () => {
       const middleware = bodyLoggingMiddleware(['password']);
-      expect(typeof middleware).toBe('function');
+      expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
 
     it('should accept array of sensitive fields', (done) => {
@@ -214,7 +220,7 @@ describe('Express Middleware', () => {
     it('should create middleware function with extractor', () => {
       const extractor = (req: Request) => req.headers['x-user-id'] as string;
       const middleware = userContextMiddleware(extractor);
-      expect(typeof middleware).toBe('function');
+      expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
 
     it('should call extractor function', (done) => {

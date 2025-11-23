@@ -13,7 +13,7 @@ export enum HealthStatus {
 /**
  * Health check result
  */
-export interface HealthCheckResult {
+export type HealthCheckResult = {
   status: HealthStatus;
   timestamp: string;
   checks: {

@@ -8,10 +8,14 @@ import { contextManager } from '../context/async-context';
  * File-based logger with rotation support
  * Stores logs to disk in JSON format
  */
+const DATE_PATTERN = 'YYYY-MM-DD';
+const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+
 export class FileLogger implements ILogger {
   private readonly logger: winston.Logger;
   private readonly serviceName: string;
 
+  /* eslint-disable max-lines-per-function */
   constructor(
     options: {
       logPath?: string;
@@ -29,11 +33,11 @@ export class FileLogger implements ILogger {
     transports.push(
       new DailyRotateFile({
         filename: `${options.logPath ?? './logs'}/%DATE%.log`,
-        datePattern: 'YYYY-MM-DD',
+        datePattern: DATE_PATTERN,
         maxSize: options.maxSize ?? '100m',
         maxFiles: options.maxFiles ?? '14d',
         format: winston.format.combine(
-          winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+          winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
           winston.format.errors({ stack: true }),
           winston.format.json(),
         ),
@@ -45,12 +49,12 @@ export class FileLogger implements ILogger {
     transports.push(
       new DailyRotateFile({
         filename: `${options.logPath ?? './logs'}/error-%DATE%.log`,
-        datePattern: 'YYYY-MM-DD',
+        datePattern: DATE_PATTERN,
         level: 'error',
         maxSize: options.maxSize ?? '100m',
         maxFiles: options.maxFiles ?? '14d',
         format: winston.format.combine(
-          winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+          winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
           winston.format.errors({ stack: true }),
           winston.format.json(),
         ),
@@ -63,7 +67,7 @@ export class FileLogger implements ILogger {
       transports.push(
         new winston.transports.Console({
           format: winston.format.combine(
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
             winston.format.colorize(),
             winston.format.printf(({ level, message, timestamp }) => {
               return `${timestamp} [${level}] ${message}`;

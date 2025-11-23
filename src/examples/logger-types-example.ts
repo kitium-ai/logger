@@ -13,6 +13,10 @@ import {
   getGlobalLogger,
 } from '../index';
 
+const EXAMPLE_SERVICE_NAME = 'my-app';
+const CUSTOM_SERVICE_NAME = 'custom-app';
+const APP_STARTED_MSG = 'Application started';
+
 /**
  * Example 1: Console Logger - Simple development logging
  */
@@ -20,9 +24,9 @@ export function exampleConsoleLogger() {
   console.log('\n=== Console Logger Example ===');
 
   // Using builder pattern
-  const logger = LoggerBuilder.console('my-app');
+  const logger = LoggerBuilder.console(EXAMPLE_SERVICE_NAME);
 
-  logger.info('Application started', { version: '1.0.0' });
+  logger.info(APP_STARTED_MSG, { version: '1.0.0' });
   logger.debug('Debug information', { environment: 'development' });
   logger.warn('Warning message', { threshold: 100 });
 
@@ -37,7 +41,7 @@ export function exampleInMemoryLogger() {
   console.log('\n=== In-Memory Logger Example ===');
 
   // Using builder pattern
-  const logger = LoggerBuilder.inMemory('my-app', 1000) as InMemoryLogger;
+  const logger = LoggerBuilder.inMemory(EXAMPLE_SERVICE_NAME, 1000) as InMemoryLogger;
 
   // Simulate some logging
   for (let i = 0; i < 5; i++) {
@@ -68,7 +72,7 @@ export function exampleFileLogger() {
 
   const logger = new LoggerBuilder()
     .withType(LoggerType.FILE)
-    .withServiceName('my-app')
+    .withServiceName(EXAMPLE_SERVICE_NAME)
     .withLogPath('./logs/app')
     .withMaxFileSize('50m')
     .withMaxFiles(7)
@@ -94,7 +98,7 @@ export async function exampleCentralLogger() {
   const config = getLoggerConfig();
   const logger = LoggerBuilder.central(config);
 
-  logger.info('Application started', {
+  logger.info(APP_STARTED_MSG, {
     version: '1.0.0',
     environment: config.environment,
   });
@@ -247,7 +251,7 @@ export function exampleCustomConfiguration() {
   // Console logger with custom settings
   const consoleLogger = new LoggerBuilder()
     .withType(LoggerType.CONSOLE)
-    .withServiceName('custom-app')
+    .withServiceName(CUSTOM_SERVICE_NAME)
     .withColors(true)
     .withTimestamps(true)
     .build();
@@ -257,7 +261,7 @@ export function exampleCustomConfiguration() {
   // File logger with custom rotation
   const fileLogger = new LoggerBuilder()
     .withType(LoggerType.FILE)
-    .withServiceName('custom-app')
+    .withServiceName(CUSTOM_SERVICE_NAME)
     .withLogPath('./logs/custom')
     .withMaxFileSize('50m')
     .withMaxFiles(10)
@@ -269,7 +273,7 @@ export function exampleCustomConfiguration() {
   // In-memory logger with large capacity
   const memoryLogger = new LoggerBuilder()
     .withType(LoggerType.IN_MEMORY)
-    .withServiceName('custom-app')
+    .withServiceName(CUSTOM_SERVICE_NAME)
     .withMaxInMemoryLogs(50000)
     .build();
 

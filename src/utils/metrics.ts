@@ -3,18 +3,18 @@
  * This module provides metrics collection for observability
  */
 
-export interface MetricValue {
+export type MetricValue = {
   timestamp: number;
   value: number;
 }
 
-export interface MetricLabels {
+export type MetricLabels = {
   [key: string]: string;
 }
 
 export class Gauge {
   private value = 0;
-  private labelsMap = new Map<string, number>();
+  private readonly labelsMap = new Map<string, number>();
 
   constructor(
     readonly name: string,
@@ -70,7 +70,7 @@ export class Gauge {
 
 export class Counter {
   private value = 0;
-  private labelsMap = new Map<string, number>();
+  private readonly labelsMap = new Map<string, number>();
 
   constructor(
     readonly name: string,
@@ -116,7 +116,7 @@ export class Counter {
 }
 
 export class Histogram {
-  private buckets: number[] = [];
+  private readonly buckets: number[] = [];
   private sum = 0;
   private count = 0;
 
@@ -125,7 +125,7 @@ export class Histogram {
     readonly help: string,
     buckets?: number[],
   ) {
-    this.buckets = buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
+    this.buckets = buckets ?? [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
   }
 
   observe(value: number): void {
@@ -146,7 +146,7 @@ export class Histogram {
  * Global metrics registry
  */
 export class MetricsRegistry {
-  private metrics = new Map<string, Gauge | Counter | Histogram>();
+  private readonly metrics = new Map<string, Gauge | Counter | Histogram>();
 
   registerGauge(name: string, help: string): Gauge {
     const gauge = new Gauge(name, help);
@@ -177,7 +177,7 @@ export class MetricsRegistry {
   toString(): string {
     let output = '';
     for (const metric of this.metrics.values()) {
-      output += metric.toString() + '\n';
+      output += `${metric.toString() }\n`;
     }
     return output;
   }

@@ -46,7 +46,7 @@ export class InMemoryLogger implements ILogger {
     return this;
   }
 
-  async close(): Promise<void> {
+  close(): Promise<void> {
     // No resources to clean up for in-memory
     return Promise.resolve();
   }
@@ -69,6 +69,7 @@ export class InMemoryLogger implements ILogger {
    * Get logs filtered by message pattern
    */
   getLogsByMessage(pattern: string | RegExp): LogEntry[] {
+    // eslint-disable-next-line security/detect-non-literal-regexp
     const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
     return this.logs.filter((log) => regex.test(log.message));
   }

@@ -1,13 +1,20 @@
 import { ConsoleLogger } from '../logger/console-logger';
 import { LogLevel } from '../config/logger.config';
 
+const TEST_SERVICE_NAME = 'test-service';
+const CUSTOM_SERVICE_NAME = 'custom-service';
+const TEST_ENV = 'development';
+const TEST_ENV_TEST = 'test';
+const SHOULD_LOG_MSG = 'Should log';
+
+/* eslint-disable max-lines-per-function */
 describe('ConsoleLogger', () => {
   let logger: ConsoleLogger;
 
   beforeEach(() => {
     logger = new ConsoleLogger({
-      serviceName: 'test-service',
-      environment: 'development',
+      serviceName: TEST_SERVICE_NAME,
+      environment: TEST_ENV,
       logLevel: LogLevel.DEBUG,
     });
 
@@ -29,8 +36,8 @@ describe('ConsoleLogger', () => {
 
     it('should accept configuration with log level', () => {
       const customLogger = new ConsoleLogger({
-        serviceName: 'custom-service',
-        environment: 'development',
+        serviceName: CUSTOM_SERVICE_NAME,
+        environment: TEST_ENV,
         logLevel: LogLevel.INFO,
       });
       expect(customLogger).toBeDefined();
@@ -105,15 +112,15 @@ describe('ConsoleLogger', () => {
   describe('log level filtering', () => {
     it('should respect debug log level', () => {
       const debugLogger = new ConsoleLogger({
-        serviceName: 'test',
-        environment: 'test',
+        serviceName: TEST_SERVICE_NAME,
+        environment: TEST_ENV_TEST,
         logLevel: LogLevel.DEBUG,
       });
       expect(() => {
-        debugLogger.debug('Should log');
-        debugLogger.info('Should log');
-        debugLogger.warn('Should log');
-        debugLogger.error('Should log');
+        debugLogger.debug(SHOULD_LOG_MSG);
+        debugLogger.info(SHOULD_LOG_MSG);
+        debugLogger.warn(SHOULD_LOG_MSG);
+        debugLogger.error(SHOULD_LOG_MSG);
       }).not.toThrow();
     });
 
@@ -126,7 +133,7 @@ describe('ConsoleLogger', () => {
       expect(() => {
         errorLogger.info('Should not log');
         errorLogger.debug('Should not log');
-        errorLogger.error('Should log');
+        errorLogger.error(SHOULD_LOG_MSG);
       }).not.toThrow();
     });
   });

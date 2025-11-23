@@ -17,6 +17,7 @@ class ContextManager {
   /**
    * Initialize context for a new trace/request
    */
+  /* eslint-disable complexity */
   initContext(context?: Partial<LogContext>): LogContext {
     const newContext: LogContext = {
       traceId: context?.traceId ?? uuidv4(),
@@ -61,6 +62,7 @@ class ContextManager {
    * Get specific context value
    */
   get<K extends keyof LogContext>(key: K): LogContext[K] | undefined {
+    // eslint-disable-next-line security/detect-object-injection
     return this.getContext()[key];
   }
 
@@ -69,6 +71,7 @@ class ContextManager {
    */
   set<K extends keyof LogContext>(key: K, value: LogContext[K]): void {
     const context = this.getContext();
+    // eslint-disable-next-line security/detect-object-injection
     context[key] = value;
   }
 
@@ -78,6 +81,7 @@ class ContextManager {
   addMetadata(key: string, value: unknown): void {
     const context = this.getContext();
     context.metadata ??= {};
+    // eslint-disable-next-line security/detect-object-injection
     context.metadata[key] = value;
   }
 
