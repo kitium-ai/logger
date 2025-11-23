@@ -25,10 +25,12 @@ export {
 export type { LoggerFactoryOptions } from './logger/logger-factory';
 
 // Configuration exports
-export { getLoggerConfig, LogLevel, LoggerConfig, LokiConfig } from './config/logger.config';
+export { getLoggerConfig, LogLevel } from './config/logger.config';
+export type { LoggerConfig, LokiConfig } from './config/logger.config';
 
 // Context management exports
-export { contextManager, LogContext } from './context/async-context';
+export { contextManager } from './context/async-context';
+export type { LogContext } from './context/async-context';
 
 // Middleware exports
 export {
@@ -50,8 +52,8 @@ export {
   LoggableError,
   BatchLogger,
   auditLog,
-  StructuredLogEntry,
 } from './utils/logger-utils';
+export type { StructuredLogEntry } from './utils/logger-utils';
 
 // Error handling exports
 export {

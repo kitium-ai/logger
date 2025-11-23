@@ -122,14 +122,14 @@ export class CentralLogger implements ILogger {
   private enrichWithContext() {
     return winston.format((info) => {
       const context = contextManager.getContext();
-      info.traceId = context.traceId;
-      if (context.spanId) info.spanId = context.spanId;
-      if (context.userId) info.userId = context.userId;
-      if (context.requestId) info.requestId = context.requestId;
-      if (context.sessionId) info.sessionId = context.sessionId;
-      if (context.correlationId) info.correlationId = context.correlationId;
+      info['traceId'] = context.traceId;
+      if (context.spanId) info['spanId'] = context.spanId;
+      if (context.userId) info['userId'] = context.userId;
+      if (context.requestId) info['requestId'] = context.requestId;
+      if (context.sessionId) info['sessionId'] = context.sessionId;
+      if (context.correlationId) info['correlationId'] = context.correlationId;
       if (context.metadata && Object.keys(context.metadata).length > 0) {
-        info.metadata = context.metadata;
+        info['metadata'] = context.metadata;
       }
       return info;
     })();
@@ -137,22 +137,22 @@ export class CentralLogger implements ILogger {
 
   private formatConsoleLog(info: winston.Logform.TransformableInfo): string {
     const context = contextManager.getContext();
-    const timestamp = this.config.includeTimestamp ? `${info.timestamp} ` : '';
+    const timestamp = this.config.includeTimestamp ? `${info['timestamp']} ` : '';
     const level = `[${info.level.toUpperCase()}]`;
     const service = `[${this.config.serviceName}]`;
     const trace = context.traceId ? ` [${context.traceId.substring(0, 8)}]` : '';
 
     let message = `${timestamp}${level} ${service}${trace} ${info.message}`;
 
-    if (info.error && info.error instanceof Error) {
-      message += `\n  Error: ${info.error.message}`;
-      if (info.stack) {
-        message += `\n${info.stack}`;
+    if (info['error'] && info['error'] instanceof Error) {
+      message += `\n  Error: ${info['error'].message}`;
+      if (info['stack']) {
+        message += `\n${info['stack']}`;
       }
     }
 
-    if (this.config.includeMeta && info.meta && Object.keys(info.meta).length > 0) {
-      message += `\n  Meta: ${JSON.stringify(info.meta, null, 2)}`;
+    if (this.config.includeMeta && info['meta'] && Object.keys(info['meta']).length > 0) {
+      message += `\n  Meta: ${JSON.stringify(info['meta'], null, 2)}`;
     }
 
     return message;
@@ -161,7 +161,7 @@ export class CentralLogger implements ILogger {
   private parseFileSize(sizeStr: string): number {
     const units: Record<string, number> = { k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024 };
     const match = sizeStr.toLowerCase().match(/^(\d+)([kmg])?b?$/);
-    if (!match) return 100 * 1024 * 1024; // Default 100MB
+    if (!match?.[1]) return 100 * 1024 * 1024; // Default 100MB
     const value = parseInt(match[1], 10);
     const unit = match[2] ?? 'b';
     // eslint-disable-next-line security/detect-object-injection
@@ -171,11 +171,11 @@ export class CentralLogger implements ILogger {
   error(message: string, meta?: unknown, error?: Error): void {
     const errorInfo: Record<string, unknown> = { message };
     if (error) {
-      errorInfo.error = error;
-      errorInfo.stack = error.stack;
+      errorInfo['error'] = error;
+      errorInfo['stack'] = error.stack;
     }
     if (meta) {
-      errorInfo.meta = meta;
+      errorInfo['meta'] = meta;
     }
     this.logger.error(errorInfo);
   }
@@ -218,8 +218,27 @@ export class CentralLogger implements ILogger {
    */
   async close(): Promise<void> {
     return new Promise((resolve) => {
-      this.logger.on('finish', resolve);
-      this.logger.end();
+      // If logger is already closed, resolve immediately
+      if (!this.logger || (this.logger as unknown as { closed?: boolean }).closed) {
+        resolve();
+        return;
+      }
+
+      const timeout = setTimeout(() => {
+        resolve();
+      }, 1000);
+
+      this.logger.once('finish', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+
+      try {
+        this.logger.end();
+      } catch {
+        clearTimeout(timeout);
+        resolve();
+      }
     });
   }
 }

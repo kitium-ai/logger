@@ -4,6 +4,9 @@ import { getLogger } from '../logger/logger';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
 
+const REQUEST_COMPLETED_MSG = 'Request completed';
+const USER_AGENT_HEADER = 'user-agent';
+
 // Augment Express Request type to include user property
 declare global {
   namespace Express {
@@ -127,7 +130,7 @@ export function errorLoggingMiddleware() {
       error: message,
       status: statusCode,
       traceId: contextManager.get('traceId'),
-      ...(process.env.NODE_ENV !== 'production' && {
+      ...(process.env['NODE_ENV'] !== 'production' && {
         stack,
       }),
     });
@@ -140,7 +143,7 @@ export function errorLoggingMiddleware() {
 export function bodyLoggingMiddleware(
   sensitiveFields: string[] = ['password', 'token', 'secret', 'apiKey'],
 ) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
       const sanitized = sanitizeData(req.body, sensitiveFields);
       getLogger().debug('Request body', {
@@ -244,7 +247,7 @@ export function sanitizeData(data: unknown, sensitiveFields: string[]): unknown 
  * Middleware to set user context from request
  */
 export function userContextMiddleware(userIdExtractor?: (req: Request) => string | undefined) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     const userId =
       userIdExtractor?.(req) ??
       (req.get('x-user-id') as string) ??

@@ -90,7 +90,7 @@ export class FileLogger implements ILogger {
   error(message: string, meta?: unknown, error?: Error): void {
     const logData = this.enrichLogData(meta);
     if (error) {
-      logData.error = { message: error.message, stack: error.stack };
+      logData['error'] = { message: error.message, ...(error.stack && { stack: error.stack }) };
     }
     this.logger.error(message, logData);
   }

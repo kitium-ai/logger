@@ -5,11 +5,14 @@ import {
   bodyLoggingMiddleware,
   userContextMiddleware,
 } from '../middleware/express-middleware';
+import { initializeLogger } from '../index';
+import { LogLevel } from '../config/logger.config';
 import type { Request, Response, NextFunction } from 'express';
 
 const HTTP_METHOD_GET = 'GET';
 const TYPE_FUNCTION = 'function';
 const TRACING_MIDDLEWARE = 'tracingMiddleware';
+const SHOULD_CREATE_MIDDLEWARE_FUNCTION = 'should create middleware function';
 
 /* eslint-disable max-lines-per-function */
 describe('Express Middleware', () => {
@@ -18,6 +21,29 @@ describe('Express Middleware', () => {
   let mockNext: jest.Mock;
 
   beforeEach(() => {
+    // Initialize logger for tests
+    initializeLogger({
+      serviceName: 'test',
+      environment: 'development',
+      logLevel: LogLevel.INFO,
+      enableConsoleTransport: true,
+      enableFileTransport: false,
+      fileLogPath: './logs',
+      maxFileSize: '10M',
+      maxFiles: 5,
+      includeTimestamp: true,
+      includeMeta: true,
+      loki: {
+        enabled: false,
+        host: 'localhost',
+        port: 3100,
+        protocol: 'http',
+        labels: {},
+        batchSize: 100,
+        interval: 1000,
+        timeout: 3000,
+      },
+    });
     mockRequest = {
       method: HTTP_METHOD_GET,
       path: '/api/users',
@@ -26,13 +52,13 @@ describe('Express Middleware', () => {
         'x-request-id': 'req-456',
       },
       body: { name: 'John', password: 'secret123' },
-      get: jest.fn((header: string) => {
+      get: jest.fn((header: string): string | string[] | undefined => {
         const headersMap: Record<string, string> = {
           'x-user-id': 'user-123',
           'x-request-id': 'req-456',
         };
         return headersMap[header.toLowerCase()];
-      }),
+      }) as unknown as Request['get'],
     };
 
     mockResponse = {
@@ -41,6 +67,8 @@ describe('Express Middleware', () => {
       json: jest.fn().mockReturnThis(),
       send: jest.fn().mockReturnThis(),
       end: jest.fn().mockReturnThis(),
+      setHeader: jest.fn().mockReturnThis(),
+      getHeader: jest.fn(),
       on: jest.fn(),
       once: jest.fn(),
       emit: jest.fn(),
@@ -61,7 +89,7 @@ describe('Express Middleware', () => {
 
 
   describe(TRACING_MIDDLEWARE, () => {
-    it('should create middleware function', () => {
+    it(SHOULD_CREATE_MIDDLEWARE_FUNCTION, () => {
 
       const middleware = tracingMiddleware();
       expect(typeof middleware).toBe(TYPE_FUNCTION);
@@ -125,7 +153,7 @@ describe('Express Middleware', () => {
   });
 
   describe('performanceMetricsMiddleware', () => {
-    it('should create middleware function', () => {
+    it(SHOULD_CREATE_MIDDLEWARE_FUNCTION, () => {
       const middleware = performanceMetricsMiddleware();
       expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
@@ -158,7 +186,7 @@ describe('Express Middleware', () => {
   });
 
   describe('errorLoggingMiddleware', () => {
-    it('should create middleware function', () => {
+    it(SHOULD_CREATE_MIDDLEWARE_FUNCTION, () => {
       const middleware = errorLoggingMiddleware();
       expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
@@ -170,7 +198,7 @@ describe('Express Middleware', () => {
   });
 
   describe('bodyLoggingMiddleware', () => {
-    it('should create middleware function', () => {
+    it(SHOULD_CREATE_MIDDLEWARE_FUNCTION, () => {
       const middleware = bodyLoggingMiddleware(['password']);
       expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
@@ -285,8 +313,8 @@ describe('Express Middleware', () => {
 
   describe('middleware ordering and integration', () => {
     it('should chain multiple middleware', (done) => {
-      const middleware1 = jest.fn((req, res, next) => next());
-      const middleware2 = jest.fn((req, res, next) => next());
+      const middleware1 = jest.fn((_req, _res, next) => next());
+      const middleware2 = jest.fn((_req, _res, next) => next());
       const middleware3 = jest.fn(() => {
         done();
       });

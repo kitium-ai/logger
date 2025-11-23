@@ -20,8 +20,8 @@ import {
  * Example Express application with integrated centralized logging
  */
 
-const app = express();
-const port = process.env.PORT ?? 3000;
+const app: express.Application = express();
+const port = Number.parseInt(process.env['PORT'] ?? '3000', 10);
 
 // Initialize logger with config
 const loggerConfig = getLoggerConfig();
@@ -58,7 +58,7 @@ app.get('/api/users/:id', (req: Request, res: Response) => {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   (async () => {
     try {
-      const userId = req.params.id;
+      const userId = req.params['id'];
 
       // Add metadata to logs for this request
       addMetadata('userId', userId);
@@ -112,7 +112,7 @@ app.post('/api/users', (req: Request, res: Response) => {
   );
 });
 
-app.get('/api/data', (req: Request, res: Response) => {
+app.get('/api/data', (_req: Request, res: Response) => {
   const timer = createTimer('Fetch data');
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -141,7 +141,7 @@ app.get('/api/data', (req: Request, res: Response) => {
   })();
 });
 
-app.get('/api/slow', (req: Request, res: Response) => {
+app.get('/api/slow', (_req: Request, res: Response) => {
   // This will trigger slow request warning
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   (async () => {

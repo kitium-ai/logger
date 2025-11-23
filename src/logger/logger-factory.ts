@@ -60,7 +60,7 @@ export class LoggerFactory {
           maxSize: options.maxSize ?? '100m',
           maxFiles: options.maxFiles ?? '14d',
           serviceName,
-          includeConsole: options.includeConsole,
+          ...(options.includeConsole !== undefined && { includeConsole: options.includeConsole }),
         });
 
       case LoggerType.CENTRAL:

@@ -27,6 +27,8 @@ describe('CentralLogger', () => {
         interval: 1000,
         timeout: 3000,
       },
+      includeTimestamp: true,
+      includeMeta: true,
     };
 
     // Suppress console output during tests
@@ -146,6 +148,18 @@ describe('CentralLogger', () => {
   describe('close method', () => {
     beforeEach(() => {
       logger = new CentralLogger(mockConfig);
+      // Suppress console output during close tests
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(async () => {
+      // Ensure logger is properly closed after each test
+      try {
+        await logger.close();
+      } catch {
+        // Ignore errors on close
+      }
     });
 
     it('should close without error', async () => {
@@ -154,6 +168,10 @@ describe('CentralLogger', () => {
 
     it('should handle multiple close calls', async () => {
       await logger.close();
+      // Wait a bit for winston to finish closing
+      await new Promise((resolve) => {
+        setTimeout(resolve, 100);
+      });
       await expect(logger.close()).resolves.not.toThrow();
     });
   });

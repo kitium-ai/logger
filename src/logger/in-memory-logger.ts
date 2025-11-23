@@ -16,6 +16,13 @@ export class InMemoryLogger implements ILogger {
     this.serviceName = options.serviceName ?? 'in-memory-service';
   }
 
+  /**
+   * Get the service name for this logger
+   */
+  getServiceName(): string {
+    return this.serviceName;
+  }
+
   error(message: string, meta?: unknown, error?: Error): void {
     this.addLog('error', message, meta, error);
   }
@@ -103,6 +110,7 @@ export class InMemoryLogger implements ILogger {
     byLevel: Record<string, number>;
     oldestLog?: string;
     newestLog?: string;
+    serviceName: string;
     } {
     const byLevel: Record<string, number> = {};
 
@@ -110,12 +118,25 @@ export class InMemoryLogger implements ILogger {
       byLevel[log.level] = (byLevel[log.level] ?? 0) + 1;
     });
 
-    return {
+    const result: {
+      totalLogs: number;
+      byLevel: Record<string, number>;
+      oldestLog?: string;
+      newestLog?: string;
+      serviceName: string;
+    } = {
       totalLogs: this.logs.length,
       byLevel,
-      oldestLog: this.logs[0]?.timestamp,
-      newestLog: this.logs[this.logs.length - 1]?.timestamp,
+      serviceName: this.serviceName,
     };
+    if (this.logs[0]?.timestamp) {
+      result.oldestLog = this.logs[0].timestamp;
+    }
+    const lastLog = this.logs[this.logs.length - 1];
+    if (lastLog?.timestamp) {
+      result.newestLog = lastLog.timestamp;
+    }
+    return result;
   }
 
   /**
@@ -134,25 +155,33 @@ export class InMemoryLogger implements ILogger {
 
   private addLog(level: string, message: string, meta?: unknown, error?: Error): void {
     const context = contextManager.getContext();
+    // Enrich metadata with service name
+    const enrichedMeta =
+      meta !== undefined
+        ? {
+            ...(typeof meta === 'object' && meta !== null && !Array.isArray(meta) ? meta : { originalMeta: meta }),
+            serviceName: this.serviceName,
+          }
+        : { serviceName: this.serviceName };
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
       message,
-      metadata: meta,
+      metadata: enrichedMeta,
       context: {
         traceId: context.traceId,
-        spanId: context.spanId,
-        userId: context.userId,
-        requestId: context.requestId,
-        sessionId: context.sessionId,
-        correlationId: context.correlationId,
+        ...(context.spanId !== undefined && { spanId: context.spanId }),
+        ...(context.userId !== undefined && { userId: context.userId }),
+        ...(context.requestId !== undefined && { requestId: context.requestId }),
+        ...(context.sessionId !== undefined && { sessionId: context.sessionId }),
+        ...(context.correlationId !== undefined && { correlationId: context.correlationId }),
       },
     };
 
     if (error) {
       entry.error = {
         message: error.message,
-        stack: error.stack,
+        ...(error.stack !== undefined && { stack: error.stack }),
       };
     }
 

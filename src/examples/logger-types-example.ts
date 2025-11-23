@@ -196,7 +196,7 @@ export async function exampleLoggerWithContext() {
 export function exampleDynamicLoggerType() {
   console.log('\n=== Dynamic Logger Type Example ===');
 
-  const loggerType = process.env.LOGGER_TYPE ?? 'console';
+  const loggerType = process.env['LOGGER_TYPE'] ?? 'console';
 
   const logger = LoggerFactory.createFromString(loggerType, {
     type: LoggerType.CONSOLE,
@@ -214,8 +214,8 @@ export function exampleDynamicLoggerType() {
 export function exampleEnvironmentSetup() {
   console.log('\n=== Environment-based Setup Example ===');
 
-  const isDev = process.env.NODE_ENV === 'development';
-  const isProd = process.env.NODE_ENV === 'production';
+  const isDev = process.env['NODE_ENV'] === 'development';
+  const isProd = process.env['NODE_ENV'] === 'production';
 
   let logger;
 
@@ -239,7 +239,7 @@ export function exampleEnvironmentSetup() {
       .build();
   }
 
-  logger.info('Logger initialized for environment', { env: process.env.NODE_ENV });
+  logger.info('Logger initialized for environment', { env: process.env['NODE_ENV'] });
 }
 
 /**

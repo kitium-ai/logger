@@ -186,6 +186,9 @@ export function parseFileSize(size: string): number {
   }
 
   const [, numberStr, unit] = match;
+  if (!numberStr) {
+    throw new Error(`Invalid file size format: ${size}`);
+  }
   const number = parseFloat(numberStr);
 
   const multipliers: Record<string, number> = {

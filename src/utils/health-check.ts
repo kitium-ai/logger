@@ -196,7 +196,7 @@ export function getHealthStatusMessage(result: HealthCheckResult): string {
 
   parts.push(`Overall Status: ${status.toUpperCase()}`);
   parts.push(`Logger: ${checks.logger.status.toUpperCase()}`);
-  parts.push(`Memory: ${checks.memory.status.toUpperCase()} (${(checks.memory.details.heapUsedPercent)}%)`);
+  parts.push(`Memory: ${checks.memory.status.toUpperCase()} (${(checks.memory.details['heapUsedPercent'])}%)`);
   parts.push(`Transport: ${checks.transport.status.toUpperCase()}`);
 
   return parts.join(' | ');

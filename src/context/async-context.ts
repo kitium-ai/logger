@@ -22,11 +22,11 @@ class ContextManager {
     const newContext: LogContext = {
       traceId: context?.traceId ?? uuidv4(),
       spanId: context?.spanId ?? uuidv4(),
-      userId: context?.userId,
       requestId: context?.requestId ?? uuidv4(),
-      sessionId: context?.sessionId,
-      correlationId: context?.correlationId,
-      metadata: context?.metadata,
+      ...(context?.userId !== undefined && { userId: context.userId }),
+      ...(context?.sessionId !== undefined && { sessionId: context.sessionId }),
+      ...(context?.correlationId !== undefined && { correlationId: context.correlationId }),
+      ...(context?.metadata !== undefined && { metadata: context.metadata }),
     };
     return newContext;
   }

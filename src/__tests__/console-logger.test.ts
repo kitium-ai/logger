@@ -1,10 +1,7 @@
 import { ConsoleLogger } from '../logger/console-logger';
-import { LogLevel } from '../config/logger.config';
 
 const TEST_SERVICE_NAME = 'test-service';
 const CUSTOM_SERVICE_NAME = 'custom-service';
-const TEST_ENV = 'development';
-const TEST_ENV_TEST = 'test';
 const SHOULD_LOG_MSG = 'Should log';
 
 /* eslint-disable max-lines-per-function */
@@ -14,8 +11,6 @@ describe('ConsoleLogger', () => {
   beforeEach(() => {
     logger = new ConsoleLogger({
       serviceName: TEST_SERVICE_NAME,
-      environment: TEST_ENV,
-      logLevel: LogLevel.DEBUG,
     });
 
     // Mock console methods
@@ -37,8 +32,6 @@ describe('ConsoleLogger', () => {
     it('should accept configuration with log level', () => {
       const customLogger = new ConsoleLogger({
         serviceName: CUSTOM_SERVICE_NAME,
-        environment: TEST_ENV,
-        logLevel: LogLevel.INFO,
       });
       expect(customLogger).toBeDefined();
     });
@@ -94,15 +87,10 @@ describe('ConsoleLogger', () => {
     });
 
     it('should handle large metadata objects', () => {
-      const largeMetadata = {
-        ...Array.from({ length: 50 }).reduce(
-          (acc, _, i) => ({
-            ...acc,
-            [`field_${i}`]: `value_${i}`,
-          }),
-          {},
-        ),
-      };
+      const largeMetadata: Record<string, string> = {};
+      for (let i = 0; i < 50; i++) {
+        largeMetadata[`field_${i}`] = `value_${i}`;
+      }
       expect(() => {
         logger.info('Large metadata', largeMetadata);
       }).not.toThrow();
@@ -113,8 +101,6 @@ describe('ConsoleLogger', () => {
     it('should respect debug log level', () => {
       const debugLogger = new ConsoleLogger({
         serviceName: TEST_SERVICE_NAME,
-        environment: TEST_ENV_TEST,
-        logLevel: LogLevel.DEBUG,
       });
       expect(() => {
         debugLogger.debug(SHOULD_LOG_MSG);
@@ -127,8 +113,6 @@ describe('ConsoleLogger', () => {
     it('should respect error log level', () => {
       const errorLogger = new ConsoleLogger({
         serviceName: 'test',
-        environment: 'test',
-        logLevel: LogLevel.ERROR,
       });
       expect(() => {
         errorLogger.info('Should not log');

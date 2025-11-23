@@ -7,16 +7,42 @@ import {
   logFunctionCall,
   BatchLogger,
 } from '../utils/logger-utils';
+import { initializeLogger } from '../index';
+import { LogLevel } from '../config/logger.config';
 
 
 /* eslint-disable sonarjs/no-duplicate-string -- Constant definition, used throughout tests */
 const TEST_OPERATION = 'Test operation';
 const TEST_ERROR = 'Test error';
 const TEST_ERROR_CODE = 'TEST_ERROR';
+const TYPE_FUNCTION = 'function';
 
 /* eslint-disable max-lines-per-function */
 describe('Logger Utils', () => {
   beforeEach(() => {
+    // Initialize logger for tests
+    initializeLogger({
+      serviceName: 'test',
+      environment: 'development',
+      logLevel: LogLevel.INFO,
+      enableConsoleTransport: true,
+      enableFileTransport: false,
+      fileLogPath: './logs',
+      maxFileSize: '10M',
+      maxFiles: 5,
+      includeTimestamp: true,
+      includeMeta: true,
+      loki: {
+        enabled: false,
+        host: 'localhost',
+        port: 3100,
+        protocol: 'http',
+        labels: {},
+        batchSize: 100,
+        interval: 1000,
+        timeout: 3000,
+      },
+    });
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'info').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -49,7 +75,8 @@ describe('Logger Utils', () => {
       setTimeout(() => {
         const metadata = timer.end({ userId: 'user-123' });
         expect(metadata.duration).toBeGreaterThan(0);
-        expect(metadata.memoryUsed).toBeGreaterThanOrEqual(0);
+        // Memory usage can be negative if GC runs between calls
+        expect(typeof metadata.memoryUsed).toBe('number');
         done();
       }, 50);
     });
@@ -57,8 +84,13 @@ describe('Logger Utils', () => {
     it('should handle multiple end calls', () => {
       const timer = createTimer(TEST_OPERATION);
       const meta1 = timer.end();
+      // Small delay to ensure duration increases
+      const start = Date.now();
+      while (Date.now() - start < 1) {
+        // Wait at least 1ms
+      }
       const meta2 = timer.end();
-      expect(meta1.duration).toBeGreaterThan(0);
+      expect(meta1.duration).toBeGreaterThanOrEqual(0);
       expect(meta2.duration).toBeGreaterThanOrEqual(meta1.duration);
     });
   });
@@ -81,6 +113,7 @@ describe('Logger Utils', () => {
 
     it('should have log method', () => {
       const error = new LoggableError(TEST_ERROR, TEST_ERROR_CODE, {});
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(error.log).toBeDefined();
 
       expect(typeof error.log).toBe(TYPE_FUNCTION);

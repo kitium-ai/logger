@@ -119,6 +119,7 @@ export class Histogram {
   private readonly buckets: number[] = [];
   private sum = 0;
   private count = 0;
+  private readonly bucketCounts: Map<number, number> = new Map();
 
   constructor(
     readonly name: string,
@@ -126,11 +127,33 @@ export class Histogram {
     buckets?: number[],
   ) {
     this.buckets = buckets ?? [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
+    // Initialize bucket counts
+    this.buckets.forEach((bucket) => {
+      this.bucketCounts.set(bucket, 0);
+    });
+    // Add +Inf bucket
+    this.bucketCounts.set(Number.POSITIVE_INFINITY, 0);
   }
 
   observe(value: number): void {
     this.sum += value;
     this.count += 1;
+
+    // Count observations in each bucket
+    let foundBucket = false;
+    for (const bucket of this.buckets) {
+      if (value <= bucket) {
+        const currentCount = this.bucketCounts.get(bucket) ?? 0;
+        this.bucketCounts.set(bucket, currentCount + 1);
+        foundBucket = true;
+        break;
+      }
+    }
+    // If value exceeds all buckets, increment +Inf bucket
+    if (!foundBucket) {
+      const infCount = this.bucketCounts.get(Number.POSITIVE_INFINITY) ?? 0;
+      this.bucketCounts.set(Number.POSITIVE_INFINITY, infCount + 1);
+    }
   }
 
   toString(): string {
@@ -138,6 +161,19 @@ export class Histogram {
     output += `# TYPE ${this.name} histogram\n`;
     output += `${this.name}_sum ${this.sum}\n`;
     output += `${this.name}_count ${this.count}\n`;
+
+    // Output bucket metrics
+    let cumulativeCount = 0;
+    for (const bucket of this.buckets) {
+      const bucketCount = this.bucketCounts.get(bucket) ?? 0;
+      cumulativeCount += bucketCount;
+      output += `${this.name}_bucket{le="${bucket}"} ${cumulativeCount}\n`;
+    }
+    // Add +Inf bucket (total count)
+    const infCount = this.bucketCounts.get(Number.POSITIVE_INFINITY) ?? 0;
+    cumulativeCount += infCount;
+    output += `${this.name}_bucket{le="+Inf"} ${cumulativeCount}\n`;
+
     return output;
   }
 }
