@@ -4,6 +4,23 @@ All notable changes to the @kitiumai/logger package will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-11-24
+
+### Added
+
+- **Next.js middleware helpers** – New `withNextApiLogger`, `withNextRouteLogger`, and `createNextFetchWrapper` adapters (exported via `@kitiumai/logger/middleware/next`) wrap API routes, App Router handlers, and outbound fetch calls with trace propagation and structured logging.
+- **NestJS middleware/filters** – Added `createNestLoggingMiddleware` and `createNestExceptionFilter` (exported via `@kitiumai/logger/middleware/nest`) so Nest apps can plug into the logger without extra wiring.
+- **Context utilities** – Introduced `withLoggingContext` helper to run arbitrary async work inside a derived log context, keeping framework adapters minimal.
+- **Documentation coverage** – README now includes full Next.js (API + App Router) and NestJS setup examples alongside existing Express/Fastify guides.
+
+### Changed
+
+- **Package exports** – Updated `package.json` to publish the new middleware entry points (`./middleware/next`, `./middleware/nest`) for both ESM and CJS consumers.
+- **Migration script** – The interactive `scripts/migrate.ts` now:
+  - Uses glob-based scanning with user-defined ignore globs.
+  - Tracks per-logger occurrences (console, Winston, Bunyan, Pino, debug) and reports line numbers with categories.
+  - Ensures the `LoggerBuilder` import/initialization are injected exactly once before rewriting console statements.
+
 ## [1.2.0] - 2025-11-20
 
 ### Added
