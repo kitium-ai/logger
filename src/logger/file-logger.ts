@@ -23,7 +23,7 @@ export class FileLogger implements ILogger {
       maxFiles?: number | string;
       serviceName?: string;
       includeConsole?: boolean;
-    } = {},
+    } = {}
   ) {
     this.serviceName = options.serviceName ?? 'app';
 
@@ -39,10 +39,10 @@ export class FileLogger implements ILogger {
         format: winston.format.combine(
           winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
           winston.format.errors({ stack: true }),
-          winston.format.json(),
+          winston.format.json()
         ),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any,
+      }) as any
     );
 
     // Separate error log
@@ -56,10 +56,10 @@ export class FileLogger implements ILogger {
         format: winston.format.combine(
           winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
           winston.format.errors({ stack: true }),
-          winston.format.json(),
+          winston.format.json()
         ),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any,
+      }) as any
     );
 
     // Optional console output
@@ -71,9 +71,9 @@ export class FileLogger implements ILogger {
             winston.format.colorize(),
             winston.format.printf(({ level, message, timestamp }) => {
               return `${timestamp} [${level}] ${message}`;
-            }),
+            })
           ),
-        }),
+        })
       );
     }
 

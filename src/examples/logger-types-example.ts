@@ -117,7 +117,7 @@ export async function exampleCentralLogger() {
   // Logs are sent to Loki and can be queried in Grafana
   console.log(
     'Logs sent to Loki at',
-    `${config.loki.protocol}://${config.loki.host}:${config.loki.port}`,
+    `${config.loki.protocol}://${config.loki.host}:${config.loki.port}`
   );
 
   // Close logger to flush logs
@@ -186,7 +186,7 @@ export async function exampleLoggerWithContext() {
       logger.debug('Validating input', { input: 'data' });
       logger.info('Request completed');
       // All logs will include traceId, userId, requestId, sessionId
-    },
+    }
   );
 }
 

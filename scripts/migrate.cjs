@@ -226,7 +226,7 @@ async function main() {
   logger.info('\n🚀 Kitium Logger Migration Tool\n');
 
   const targetDir = await question(
-    'Enter the project directory to scan (default: current directory): ',
+    'Enter the project directory to scan (default: current directory): '
   );
   const dir = targetDir.trim() || process.cwd();
 
@@ -245,7 +245,7 @@ async function main() {
 
   // Ask if user wants to perform migration
   const shouldMigrate = await question(
-    '\nWould you like to automatically migrate the files? (yes/no): ',
+    '\nWould you like to automatically migrate the files? (yes/no): '
   );
   if (shouldMigrate.toLowerCase() === 'yes' || shouldMigrate.toLowerCase() === 'y') {
     logger.info('\n🔄 Starting migration...\n');

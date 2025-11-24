@@ -42,6 +42,16 @@ export {
   addMetadata,
   sanitizeData,
 } from './middleware/express-middleware';
+export {
+  withNextApiLogger,
+  withNextRouteLogger,
+  createNextFetchWrapper,
+} from './middleware/next-middleware';
+export {
+  NestLoggerMiddleware,
+  createNestLoggingMiddleware,
+  createNestExceptionFilter,
+} from './middleware/nest-logger.middleware';
 
 // Utility exports
 export {
@@ -52,6 +62,7 @@ export {
   LoggableError,
   BatchLogger,
   auditLog,
+  withLoggingContext,
 } from './utils/logger-utils';
 export type { StructuredLogEntry } from './utils/logger-utils';
 

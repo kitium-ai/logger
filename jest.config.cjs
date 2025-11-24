@@ -1,4 +1,4 @@
-const baseConfig = require('@kitiumai/config/jest.config.base.js');
+const baseConfig = require('@kitiumai/config/jest.config.base.cjs');
 
 module.exports = {
   ...baseConfig,

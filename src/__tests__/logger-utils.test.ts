@@ -10,7 +10,6 @@ import {
 import { initializeLogger } from '../index';
 import { LogLevel } from '../config/logger.config';
 
-
 /* eslint-disable sonarjs/no-duplicate-string -- Constant definition, used throughout tests */
 const TEST_OPERATION = 'Test operation';
 const TEST_ERROR = 'Test error';
@@ -52,7 +51,6 @@ describe('Logger Utils', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
-
 
   describe('createTimer', () => {
     it('should create a timer instance', () => {
@@ -137,9 +135,7 @@ describe('Logger Utils', () => {
   describe('withErrorLogging', () => {
     it('should execute callback without error', async () => {
       const callback = jest.fn();
-      await expect(
-        withErrorLogging(callback, { operation: 'Test' }),
-      ).resolves.not.toThrow();
+      await expect(withErrorLogging(callback, { operation: 'Test' })).resolves.not.toThrow();
       expect(callback).toHaveBeenCalled();
     });
 
@@ -152,9 +148,7 @@ describe('Logger Utils', () => {
     it('should catch and log errors', async () => {
       const error = new Error('Test error');
       const callback = jest.fn().mockRejectedValue(error);
-      await expect(
-        withErrorLogging(callback, { operation: 'Test' }),
-      ).rejects.toThrow();
+      await expect(withErrorLogging(callback, { operation: 'Test' })).rejects.toThrow();
       expect(callback).toHaveBeenCalled();
     });
 
@@ -254,10 +248,7 @@ describe('Logger Utils', () => {
 
     it('should support chaining', () => {
       const logger = new BatchLogger();
-      const result = logger
-        .info('Message 1', {})
-        .warn('Message 2', {})
-        .error('Message 3', {});
+      const result = logger.info('Message 1', {}).warn('Message 2', {}).error('Message 3', {});
       expect(result).toBe(logger);
     });
 

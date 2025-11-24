@@ -7,34 +7,35 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
+import { glob } from 'glob';
 import { LoggerBuilder } from '../index.js';
 
+type LoggerCategory = 'console_log' | 'winston' | 'bunyan' | 'pino' | 'debug';
+
 interface MigrationStats {
-  console_log: number;
-  winston: number;
-  bunyan: number;
-  pino: number;
-  debug: number;
-  files: Map<string, number[]>;
+  counts: Record<LoggerCategory, number>;
+  files: Map<string, Array<{ line: number; category: LoggerCategory }>>;
 }
 
 const logger = LoggerBuilder.console('migrate');
 
 const stats: MigrationStats = {
-  console_log: 0,
-  winston: 0,
-  bunyan: 0,
-  pino: 0,
-  debug: 0,
+  counts: {
+    console_log: 0,
+    winston: 0,
+    bunyan: 0,
+    pino: 0,
+    debug: 0,
+  },
   files: new Map(),
 };
 
-const patterns = {
+const patterns: Record<LoggerCategory, RegExp> = {
   console_log: /console\.(log|error|warn|info|debug)\(/g,
-  winston: /logger\.(log|error|warn|info|debug)\(/g,
-  bunyan: /log\.(log|error|warn|info|debug)\(/g,
-  pino: /logger\.(log|error|warn|info|debug)\(/g,
-  debug: /debug\('.*?'\)/g,
+  winston: /(winston|createLogger)\.(log|error|warn|info|debug)\(/g,
+  bunyan: /(bunyan|createLogger)\.(log|error|warn|info|debug)\(/g,
+  pino: /(pino|createLogger)\.(log|error|warn|info|debug)\(/g,
+  debug: /debug\(['"`].*?['"`]\)/g,
 };
 
 const rl = readline.createInterface({
@@ -54,61 +55,38 @@ function scanFile(filePath: string): void {
     const lines = content.split('\n');
 
     lines.forEach((line, index) => {
-      if (patterns.console_log.test(line)) {
-        stats.console_log++;
-        addFileMatch(filePath, index + 1);
-      }
-      if (patterns.winston.test(line)) {
-        stats.winston++;
-        addFileMatch(filePath, index + 1);
-      }
-      if (patterns.bunyan.test(line)) {
-        stats.bunyan++;
-        addFileMatch(filePath, index + 1);
-      }
-      if (patterns.pino.test(line)) {
-        stats.pino++;
-        addFileMatch(filePath, index + 1);
-      }
-      if (patterns.debug.test(line)) {
-        stats.debug++;
-        addFileMatch(filePath, index + 1);
-      }
+      (Object.keys(patterns) as LoggerCategory[]).forEach((category) => {
+        patterns[category].lastIndex = 0;
+        if (patterns[category].test(line)) {
+          stats.counts[category]++;
+          addFileMatch(filePath, index + 1, category);
+        }
+      });
     });
   } catch (_error) {
     // Skip files that can't be read
   }
 }
 
-function addFileMatch(filePath: string, lineNumber: number): void {
+function addFileMatch(filePath: string, lineNumber: number, category: LoggerCategory): void {
   if (!stats.files.has(filePath)) {
     stats.files.set(filePath, []);
   }
-  stats.files.get(filePath)!.push(lineNumber);
+  stats.files.get(filePath)!.push({ line: lineNumber, category });
 }
 
-function scanDirectory(
-  dir: string,
-  exclude: string[] = ['node_modules', '.git', 'dist', 'build'],
-): void {
-  try {
-    const files = fs.readdirSync(dir);
+async function scanDirectory(dir: string, ignoreGlobs: string[]): Promise<void> {
+  const matchers = ignoreGlobs.length ? { ignore: ignoreGlobs } : {};
+  const files = await glob('**/*.{js,ts,jsx,tsx}', {
+    cwd: dir,
+    nodir: true,
+    ...matchers,
+  });
 
-    files.forEach((file) => {
-      if (exclude.includes(file)) return;
-
-      const filePath = path.join(dir, file);
-      const stat = fs.statSync(filePath);
-
-      if (stat.isDirectory()) {
-        scanDirectory(filePath, exclude);
-      } else if (stat.isFile() && /\.(js|ts|jsx|tsx)$/.test(filePath)) {
-        scanFile(filePath);
-      }
-    });
-  } catch (_error) {
-    // Skip directories that can't be read
-  }
+  files.forEach((relativePath) => {
+    const filePath = path.join(dir, relativePath);
+    scanFile(filePath);
+  });
 }
 
 function printMigrationReport(): void {
@@ -118,24 +96,24 @@ function printMigrationReport(): void {
 
   logger.info('📊 Logger Usage Summary:');
   logger.info('─────────────────────────────────────────────────────────────');
-  logger.info(`  console.log/error/warn/info/debug:  ${stats.console_log} occurrences`);
-  logger.info(`  Winston logger:                      ${stats.winston} occurrences`);
-  logger.info(`  Bunyan logger:                       ${stats.bunyan} occurrences`);
-  logger.info(`  Pino logger:                         ${stats.pino} occurrences`);
-  logger.info(`  Debug module:                        ${stats.debug} occurrences`);
+  logger.info(`  console.log/error/warn/info/debug:  ${stats.counts.console_log} occurrences`);
+  logger.info(`  Winston logger:                      ${stats.counts.winston} occurrences`);
+  logger.info(`  Bunyan logger:                       ${stats.counts.bunyan} occurrences`);
+  logger.info(`  Pino logger:                         ${stats.counts.pino} occurrences`);
+  logger.info(`  Debug module:                        ${stats.counts.debug} occurrences`);
   logger.info('─────────────────────────────────────────────────────────────\n');
 
-  const totalOccurrences =
-    stats.console_log + stats.winston + stats.bunyan + stats.pino + stats.debug;
+  const totalOccurrences = Object.values(stats.counts).reduce((sum, value) => sum + value, 0);
   logger.info(`📈 Total logging statements found: ${totalOccurrences}\n`);
 
   if (stats.files.size > 0) {
     logger.info('📁 Files that need migration:');
     logger.info('─────────────────────────────────────────────────────────────');
-    Array.from(stats.files.entries()).forEach(([file, lines]) => {
+    Array.from(stats.files.entries()).forEach(([file, matches]) => {
       const relPath = path.relative(process.cwd(), file);
       logger.info(`  ${relPath}`);
-      logger.info(`    Lines: ${lines.join(', ')}`);
+      const summary = matches.map((match) => `${match.line} (${match.category})`).join(', ');
+      logger.info(`    Lines: ${summary}`);
     });
     logger.info('');
   }
@@ -172,36 +150,40 @@ function printMigrationGuide(): void {
   logger.info('   MIGRATION.md in the project root\n');
 }
 
-function replaceLoggingStatements(content: string): string {
-  // Add import if not present
-  if (!content.includes('LoggerBuilder')) {
-    const importStatement = "import { LoggerBuilder } from '@kitium-ai/logger';\n";
-    const lastImport = content.lastIndexOf('import ');
-    if (lastImport !== -1) {
-      const lineEnd = content.indexOf('\n', lastImport);
-      content = content.slice(0, lineEnd + 1) + importStatement + content.slice(lineEnd + 1);
-    } else {
-      content = importStatement + content;
-    }
+function ensureKitiumImport(content: string): string {
+  if (content.includes('@kitiumai/logger')) {
+    return content;
   }
+  const importStatement = "import { LoggerBuilder } from '@kitiumai/logger';\n";
+  const lastImportIndex = content.lastIndexOf('import ');
+  if (lastImportIndex !== -1) {
+    const lineEnd = content.indexOf('\n', lastImportIndex);
+    return content.slice(0, lineEnd + 1) + importStatement + content.slice(lineEnd + 1);
+  }
+  return importStatement + content;
+}
 
-  // Initialize logger if not present
-  if (!content.includes('const logger = LoggerBuilder')) {
-    const importEnd = content.lastIndexOf('import ');
+function ensureLoggerInit(content: string): string {
+  if (content.includes('const logger = LoggerBuilder')) {
+    return content;
+  }
+  const importEnd = content.lastIndexOf('import ');
+  if (importEnd !== -1) {
     const lineEnd = content.indexOf('\n', importEnd);
     const initStatement = "\nconst logger = LoggerBuilder.console('app');\n";
-    content = content.slice(0, lineEnd + 1) + initStatement + content.slice(lineEnd + 1);
+    return content.slice(0, lineEnd + 1) + initStatement + content.slice(lineEnd + 1);
   }
+  return "const logger = LoggerBuilder.console('app');\n" + content;
+}
 
-  // Replace console.log with logger.info
+function replaceLoggingStatements(content: string): string {
+  content = ensureKitiumImport(content);
+  content = ensureLoggerInit(content);
+
   content = content.replace(/console\.log\(/g, 'logger.info(');
-  // Replace console.error with logger.error
   content = content.replace(/console\.error\(/g, 'logger.error(');
-  // Replace console.warn with logger.warn
   content = content.replace(/console\.warn\(/g, 'logger.warn(');
-  // Replace console.info with logger.info
   content = content.replace(/console\.info\(/g, 'logger.info(');
-  // Replace console.debug with logger.debug
   content = content.replace(/console\.debug\(/g, 'logger.debug(');
 
   return content;
@@ -235,7 +217,7 @@ async function main(): Promise<void> {
   logger.info('\n🚀 Kitium Logger Migration Tool (TypeScript)\n');
 
   const targetDir = await question(
-    'Enter the project directory to scan (default: current directory): ',
+    'Enter the project directory to scan (default: current directory): '
   );
   const dir = targetDir.trim() || process.cwd();
 
@@ -244,17 +226,27 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const ignoreInput = await question(
+    'Enter comma-separated globs to ignore (default: node_modules,dist,build,.git): '
+  );
+  const ignoreGlobs = ignoreInput
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const defaultIgnore = ['node_modules', 'dist', 'build', '.git'];
+  const combinedIgnore = ignoreGlobs.length ? defaultIgnore.concat(ignoreGlobs) : defaultIgnore;
+
   logger.info(`\n📂 Scanning directory: ${dir}\n`);
   logger.info('Scanning files...');
 
-  scanDirectory(dir);
+  await scanDirectory(dir, combinedIgnore);
 
   printMigrationReport();
   printMigrationGuide();
 
   // Ask if user wants to perform migration
   const shouldMigrate = await question(
-    '\nWould you like to automatically migrate the files? (yes/no): ',
+    '\nWould you like to automatically migrate the files? (yes/no): '
   );
   if (shouldMigrate.toLowerCase() === 'yes' || shouldMigrate.toLowerCase() === 'y') {
     logger.info('\n🔄 Starting migration...\n');

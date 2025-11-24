@@ -8,7 +8,7 @@ import { getLogger } from '../logger/logger';
 export class ConfigValidationError extends Error {
   constructor(
     public readonly field: string,
-    message: string,
+    message: string
   ) {
     super(`Configuration error in field '${field}': ${message}`);
     this.name = 'ConfigValidationError';
@@ -22,7 +22,7 @@ export type ValidationResult = {
   valid: boolean;
   errors: ConfigValidationError[];
   warnings: string[];
-}
+};
 
 /**
  * Validates LoggerConfig and returns validation results
@@ -36,7 +36,9 @@ export function validateLoggerConfig(config: LoggerConfig): ValidationResult {
   if (!config.serviceName || config.serviceName.trim().length === 0) {
     errors.push(new ConfigValidationError('serviceName', 'Service name cannot be empty'));
   } else if (config.serviceName.length > 255) {
-    errors.push(new ConfigValidationError('serviceName', 'Service name must be less than 255 characters'));
+    errors.push(
+      new ConfigValidationError('serviceName', 'Service name must be less than 255 characters')
+    );
   }
 
   // Validate environment
@@ -45,8 +47,8 @@ export function validateLoggerConfig(config: LoggerConfig): ValidationResult {
     errors.push(
       new ConfigValidationError(
         'environment',
-        `Environment must be one of: ${validEnvironments.join(', ')}`,
-      ),
+        `Environment must be one of: ${validEnvironments.join(', ')}`
+      )
     );
   }
 
@@ -54,32 +56,32 @@ export function validateLoggerConfig(config: LoggerConfig): ValidationResult {
   const validLevels = [LogLevel.DEBUG, LogLevel.HTTP, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
   if (!validLevels.includes(config.logLevel)) {
     errors.push(
-      new ConfigValidationError(
-        'logLevel',
-        `Log level must be one of: ${validLevels.join(', ')}`,
-      ),
+      new ConfigValidationError('logLevel', `Log level must be one of: ${validLevels.join(', ')}`)
     );
   }
 
   // Validate file transport settings
   if (config.enableFileTransport) {
     if (!config.fileLogPath || config.fileLogPath.trim().length === 0) {
-      errors.push(new ConfigValidationError('fileLogPath', 'File log path cannot be empty when file transport is enabled'));
+      errors.push(
+        new ConfigValidationError(
+          'fileLogPath',
+          'File log path cannot be empty when file transport is enabled'
+        )
+      );
     }
 
     if (!isValidFileSize(config.maxFileSize)) {
       errors.push(
         new ConfigValidationError(
           'maxFileSize',
-          'Invalid file size format. Use format like "10M", "100K", "1G"',
-        ),
+          'Invalid file size format. Use format like "10M", "100K", "1G"'
+        )
       );
     }
 
     if (config.maxFiles < 1) {
-      errors.push(
-        new ConfigValidationError('maxFiles', 'Max files must be at least 1'),
-      );
+      errors.push(new ConfigValidationError('maxFiles', 'Max files must be at least 1'));
     }
 
     if (config.maxFiles > 100) {
@@ -105,7 +107,7 @@ export function validateLoggerConfig(config: LoggerConfig): ValidationResult {
 function validateLokiConfig(
   loki: LoggerConfig['loki'],
   errors: ConfigValidationError[],
-  warnings: string[],
+  warnings: string[]
 ): void {
   // Validate host
   if (!loki.host || loki.host.trim().length === 0) {
@@ -123,8 +125,8 @@ function validateLokiConfig(
     errors.push(
       new ConfigValidationError(
         'loki.protocol',
-        `Loki protocol must be one of: ${validProtocols.join(', ')}`,
-      ),
+        `Loki protocol must be one of: ${validProtocols.join(', ')}`
+      )
     );
   }
 
@@ -148,15 +150,11 @@ function validateLokiConfig(
   // Validate basic auth if provided
   if (loki.basicAuth) {
     if (!loki.basicAuth.username || loki.basicAuth.username.trim().length === 0) {
-      errors.push(
-        new ConfigValidationError('loki.basicAuth.username', 'Username cannot be empty'),
-      );
+      errors.push(new ConfigValidationError('loki.basicAuth.username', 'Username cannot be empty'));
     }
 
     if (!loki.basicAuth.password || loki.basicAuth.password.trim().length === 0) {
-      errors.push(
-        new ConfigValidationError('loki.basicAuth.password', 'Password cannot be empty'),
-      );
+      errors.push(new ConfigValidationError('loki.basicAuth.password', 'Password cannot be empty'));
     }
   }
 

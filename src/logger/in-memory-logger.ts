@@ -111,7 +111,7 @@ export class InMemoryLogger implements ILogger {
     oldestLog?: string;
     newestLog?: string;
     serviceName: string;
-    } {
+  } {
     const byLevel: Record<string, number> = {};
 
     this.logs.forEach((log) => {
@@ -159,7 +159,9 @@ export class InMemoryLogger implements ILogger {
     const enrichedMeta =
       meta !== undefined
         ? {
-            ...(typeof meta === 'object' && meta !== null && !Array.isArray(meta) ? meta : { originalMeta: meta }),
+            ...(typeof meta === 'object' && meta !== null && !Array.isArray(meta)
+              ? meta
+              : { originalMeta: meta }),
             serviceName: this.serviceName,
           }
         : { serviceName: this.serviceName };

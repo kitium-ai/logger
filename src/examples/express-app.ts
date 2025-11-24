@@ -38,7 +38,7 @@ app.use(
   userContextMiddleware((req) => {
     // Custom user ID extraction logic
     return (req.headers['x-user-id'] as string) ?? null;
-  }),
+  })
 );
 
 // Routes
@@ -108,7 +108,7 @@ app.post('/api/users', (req: Request, res: Response) => {
       const newUser = { id: '123', email, name };
       res.status(201).json(newUser);
     },
-    { operation: 'Create user', metadata: { email } },
+    { operation: 'Create user', metadata: { email } }
   );
 });
 

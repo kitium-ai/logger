@@ -6,11 +6,11 @@
 export type MetricValue = {
   timestamp: number;
   value: number;
-}
+};
 
 export type MetricLabels = {
   [key: string]: string;
-}
+};
 
 export class Gauge {
   private value = 0;
@@ -18,7 +18,7 @@ export class Gauge {
 
   constructor(
     readonly name: string,
-    readonly help: string,
+    readonly help: string
   ) {}
 
   set(value: number, labels?: MetricLabels): void {
@@ -74,7 +74,7 @@ export class Counter {
 
   constructor(
     readonly name: string,
-    readonly help: string,
+    readonly help: string
   ) {}
 
   inc(amount = 1, labels?: MetricLabels): void {
@@ -124,7 +124,7 @@ export class Histogram {
   constructor(
     readonly name: string,
     readonly help: string,
-    buckets?: number[],
+    buckets?: number[]
   ) {
     this.buckets = buckets ?? [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
     // Initialize bucket counts
@@ -213,7 +213,7 @@ export class MetricsRegistry {
   toString(): string {
     let output = '';
     for (const metric of this.metrics.values()) {
-      output += `${metric.toString() }\n`;
+      output += `${metric.toString()}\n`;
     }
     return output;
   }
@@ -230,23 +230,20 @@ const globalRegistry = new MetricsRegistry();
 export const loggerMetrics = {
   logCounter: globalRegistry.registerCounter(
     'logger_logs_total',
-    'Total number of log entries created',
+    'Total number of log entries created'
   ),
-  errorCounter: globalRegistry.registerCounter(
-    'logger_errors_total',
-    'Total number of error logs',
-  ),
+  errorCounter: globalRegistry.registerCounter('logger_errors_total', 'Total number of error logs'),
   lokiBatchLatency: globalRegistry.registerHistogram(
     'logger_loki_batch_latency_seconds',
-    'Latency of Loki batch uploads in seconds',
+    'Latency of Loki batch uploads in seconds'
   ),
   memoryUsage: globalRegistry.registerGauge(
     'logger_memory_usage_bytes',
-    'Logger memory usage in bytes',
+    'Logger memory usage in bytes'
   ),
   dropgedLogs: globalRegistry.registerCounter(
     'logger_dropped_logs_total',
-    'Total number of dropped logs due to load',
+    'Total number of dropped logs due to load'
   ),
 };
 

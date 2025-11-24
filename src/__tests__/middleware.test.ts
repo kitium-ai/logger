@@ -87,10 +87,8 @@ describe('Express Middleware', () => {
     jest.restoreAllMocks();
   });
 
-
   describe(TRACING_MIDDLEWARE, () => {
     it(SHOULD_CREATE_MIDDLEWARE_FUNCTION, () => {
-
       const middleware = tracingMiddleware();
       expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
@@ -101,11 +99,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should handle GET requests', (done) => {
@@ -114,11 +108,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should handle POST requests', (done) => {
@@ -128,11 +118,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should handle errors in next middleware', (done) => {
@@ -142,11 +128,7 @@ describe('Express Middleware', () => {
       });
 
       expect(() => {
-        middleware(
-          mockRequest as Request,
-          mockResponse as Response,
-          mockNext as NextFunction,
-        );
+        middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
       }).toThrow();
       done();
     });
@@ -164,11 +146,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should handle slow requests', (done) => {
@@ -177,11 +155,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
   });
 
@@ -209,11 +183,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should work with default sensitive fields', (done) => {
@@ -222,11 +192,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should handle requests without body', (done) => {
@@ -236,11 +202,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
   });
 
@@ -258,11 +220,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
 
       expect(extractor).toHaveBeenCalled();
     });
@@ -274,11 +232,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should handle extractor returning undefined', (done) => {
@@ -288,11 +242,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
 
     it('should handle request with user ID header', (done) => {
@@ -303,11 +253,7 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext as NextFunction,
-      );
+      middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
     });
   });
 
@@ -319,17 +265,9 @@ describe('Express Middleware', () => {
         done();
       });
 
-      middleware1(
-        mockRequest as Request,
-        mockResponse as Response,
-        () => {
-          middleware2(
-            mockRequest as Request,
-            mockResponse as Response,
-            middleware3,
-          );
-        },
-      );
+      middleware1(mockRequest as Request, mockResponse as Response, () => {
+        middleware2(mockRequest as Request, mockResponse as Response, middleware3);
+      });
 
       expect(middleware1).toHaveBeenCalled();
       expect(middleware2).toHaveBeenCalled();

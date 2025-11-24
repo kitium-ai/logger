@@ -68,7 +68,7 @@ export class LoggerFactory {
         // For Central logger, we need the full config
         // This is handled by the LoggerBuilder
         throw new Error(
-          'Central logger requires full config. Use LoggerBuilder.createCentralLogger()',
+          'Central logger requires full config. Use LoggerBuilder.createCentralLogger()'
         );
     }
   }
@@ -250,7 +250,7 @@ let globalLogger: ILogger | null = null;
  * Initialize global logger with automatic type selection
  */
 export function initGlobalLogger(
-  options: LoggerFactoryOptions & { config?: LoggerConfig },
+  options: LoggerFactoryOptions & { config?: LoggerConfig }
 ): ILogger {
   if (options.type === LoggerType.CENTRAL && !options.config) {
     throw new Error('Central logger requires config option');
@@ -271,7 +271,7 @@ export function initGlobalLogger(
 export function getGlobalLogger(): ILogger {
   if (!globalLogger) {
     throw new Error(
-      'Global logger not initialized. Call initGlobalLogger() or initializeLogger() first.',
+      'Global logger not initialized. Call initGlobalLogger() or initializeLogger() first.'
     );
   }
   return globalLogger;

@@ -16,7 +16,7 @@ export class ConsoleLogger implements ILogger {
       serviceName?: string;
       includeTimestamp?: boolean;
       colors?: boolean;
-    } = {},
+    } = {}
   ) {
     this.serviceName = options.serviceName ?? 'app';
     this.includeTimestamp = options.includeTimestamp !== false;

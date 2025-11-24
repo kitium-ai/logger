@@ -26,9 +26,9 @@ export class CentralLogger implements ILogger {
   private logger: winston.Logger;
   private readonly config: LoggerConfig;
 
-  constructor(config: LoggerConfig) {
+  constructor(config: LoggerConfig, existingLogger?: winston.Logger) {
     this.config = config;
-    this.logger = this.createLogger();
+    this.logger = existingLogger ?? this.createLogger();
   }
 
   /* eslint-disable max-lines-per-function */
@@ -42,9 +42,9 @@ export class CentralLogger implements ILogger {
           format: winston.format.combine(
             winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format.colorize(),
-            winston.format.printf(this.formatConsoleLog.bind(this)),
+            winston.format.printf(this.formatConsoleLog.bind(this))
           ),
-        }),
+        })
       );
     }
 
@@ -57,7 +57,7 @@ export class CentralLogger implements ILogger {
           maxsize: this.parseFileSize(this.config.maxFileSize),
           maxFiles: this.config.maxFiles,
           format: winston.format.json(),
-        }),
+        })
       );
 
       transports.push(
@@ -66,7 +66,7 @@ export class CentralLogger implements ILogger {
           maxsize: this.parseFileSize(this.config.maxFileSize),
           maxFiles: this.config.maxFiles,
           format: winston.format.json(),
-        }),
+        })
       );
     }
 
@@ -89,10 +89,10 @@ export class CentralLogger implements ILogger {
             winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format.errors({ stack: true }),
             this.enrichWithContext(),
-            winston.format.json(),
+            winston.format.json()
           ),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any),
+        } as any)
       );
     }
 
@@ -208,9 +208,8 @@ export class CentralLogger implements ILogger {
    * Create child logger with additional metadata
    */
   child(metadata: Record<string, unknown>): ILogger {
-    const childLogger = new CentralLogger(this.config);
-    childLogger.logger = this.logger.child(metadata);
-    return childLogger;
+    const winstonChild = this.logger.child(metadata);
+    return new CentralLogger(this.config, winstonChild);
   }
 
   /**

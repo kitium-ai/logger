@@ -1,4 +1,6 @@
 import { getLogger } from '../logger/logger';
+import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
 
 /**
  * Create a performance timer for measuring operation duration
@@ -39,7 +41,7 @@ export function createTimer(label = 'Operation') {
  */
 export async function withErrorLogging<T>(
   fn: () => Promise<T>,
-  context?: { operation: string; metadata?: Record<string, unknown> },
+  context?: { operation: string; metadata?: Record<string, unknown> }
 ): Promise<T> {
   const operation = context?.operation ?? 'Operation';
   const timer = createTimer(operation);
@@ -59,7 +61,7 @@ export async function withErrorLogging<T>(
  */
 export function withErrorLoggingSync<T>(
   fn: () => T,
-  context?: { operation: string; metadata?: Record<string, unknown> },
+  context?: { operation: string; metadata?: Record<string, unknown> }
 ): T {
   const operation = context?.operation ?? 'Operation';
   const timer = createTimer(operation);
@@ -79,7 +81,7 @@ export function withErrorLoggingSync<T>(
  */
 export function logFunctionCall<T extends unknown[], R>(
   fn: (...args: T) => R,
-  fnName: string = fn.name ?? 'anonymous',
+  fnName: string = fn.name ?? 'anonymous'
 ) {
   return (...args: T) => {
     getLogger().debug(`Entering ${fnName}`, { args });
@@ -101,7 +103,7 @@ export class LoggableError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly metadata?: Record<string, unknown>,
+    public readonly metadata?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'LoggableError';
@@ -174,6 +176,16 @@ export class BatchLogger {
 }
 
 /**
+ * Helper to wrap async handlers with logging context (framework-agnostic)
+ */
+export async function withLoggingContext<T>(
+  context: Partial<LogContext>,
+  handler: () => Promise<T>
+): Promise<T> {
+  const derivedContext = contextManager.initContext(context);
+  return contextManager.run(derivedContext, handler);
+}
+/**
  * Convert winston info object to structured log entry
  */
 export type StructuredLogEntry = {
@@ -199,7 +211,7 @@ export function auditLog(
   action: string,
   resource: string,
   actor?: string,
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown>
 ): void {
   const logger = getLogger();
   logger.info(`Audit: ${action} on ${resource}`, {

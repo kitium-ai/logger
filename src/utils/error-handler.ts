@@ -8,7 +8,7 @@ export type RetryConfig = {
   initialDelayMs?: number;
   maxDelayMs?: number;
   backoffMultiplier?: number;
-}
+};
 
 /**
  * Retry an async function with exponential backoff
@@ -16,7 +16,7 @@ export type RetryConfig = {
 /* eslint-disable complexity */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  config: RetryConfig = {},
+  config: RetryConfig = {}
 ): Promise<T> {
   const {
     maxRetries = 3,
@@ -83,7 +83,7 @@ export class CircuitBreaker<T> {
       failureThreshold?: number;
       resetTimeoutMs?: number;
       onStateChange?: (newState: string) => void;
-    } = {},
+    } = {}
   ) {}
 
   async execute(): Promise<T> {
@@ -151,7 +151,7 @@ export class CircuitBreaker<T> {
  */
 export async function safeAsync<T>(
   fn: () => Promise<T>,
-  errorHandler?: (error: Error) => void,
+  errorHandler?: (error: Error) => void
 ): Promise<T | null> {
   try {
     return await fn();
@@ -169,7 +169,7 @@ export async function safeAsync<T>(
 export async function withGracefulDegradation<T>(
   primaryFn: () => Promise<T>,
   fallbackFn: () => Promise<T>,
-  context?: { operation?: string; metadata?: Record<string, unknown> },
+  context?: { operation?: string; metadata?: Record<string, unknown> }
 ): Promise<T> {
   const operationName = context?.operation ?? 'Operation';
 
@@ -187,7 +187,8 @@ export async function withGracefulDegradation<T>(
       getLogger().error(`${operationName} failed in both primary and fallback operations`, {
         ...context?.metadata,
         primaryError: primaryError instanceof Error ? primaryError.message : String(primaryError),
-        fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+        fallbackError:
+          fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
       });
       throw fallbackError;
     }

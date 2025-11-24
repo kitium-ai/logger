@@ -1,4 +1,9 @@
+import axios, { type AxiosRequestConfig } from 'axios';
+import { access } from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
+import { resolve as resolvePath } from 'node:path';
 import { getLogger } from '../logger/logger';
+import { getLoggerConfig, type LoggerConfig } from '../config/logger.config';
 import { loggerMetrics } from './metrics';
 
 /**
@@ -31,25 +36,21 @@ export type HealthCheckResult = {
     };
   };
   uptime: number;
-}
+};
 
 /**
  * Performs health checks on the logger system
  */
-export function performHealthCheck(): HealthCheckResult {
+export async function performHealthCheck(
+  config: LoggerConfig = getLoggerConfig()
+): Promise<HealthCheckResult> {
   const now = new Date();
   const uptime = process.uptime();
 
-  // Check logger health
   const loggerCheck = checkLoggerHealth();
-
-  // Check memory health
   const memoryCheck = checkMemoryHealth();
+  const transportCheck = await checkTransportHealth(config);
 
-  // Check transport health
-  const transportCheck = checkTransportHealth();
-
-  // Determine overall status
   const allStatuses = [loggerCheck.status, memoryCheck.status, transportCheck.status];
   let overallStatus = HealthStatus.HEALTHY;
 
@@ -136,31 +137,115 @@ function checkMemoryHealth(): HealthCheckResult['checks']['memory'] {
 /**
  * Checks transport health (simulated check for demonstration)
  */
-function checkTransportHealth(): HealthCheckResult['checks']['transport'] {
-  try {
-    // In a real implementation, this would check:
-    // - Loki connectivity
-    // - File system availability
-    // - Network connectivity
+async function checkTransportHealth(
+  config: LoggerConfig
+): Promise<HealthCheckResult['checks']['transport']> {
+  const [loki, filesystem] = await Promise.all([
+    checkLokiConnection(config.loki),
+    checkFilesystemAccess(config.enableFileTransport, config.fileLogPath),
+  ]);
 
+  let status = HealthStatus.HEALTHY;
+  const detailStatuses = [loki.status, filesystem.status];
+  if (detailStatuses.includes(HealthStatus.UNHEALTHY)) {
+    status = HealthStatus.UNHEALTHY;
+  } else if (detailStatuses.includes(HealthStatus.DEGRADED)) {
+    status = HealthStatus.DEGRADED;
+  }
+
+  return {
+    status,
+    details: {
+      loki,
+      filesystem,
+    },
+  };
+}
+
+async function checkLokiConnection(
+  lokiConfig: LoggerConfig['loki']
+): Promise<{ status: HealthStatus; [key: string]: unknown }> {
+  if (!lokiConfig.enabled) {
     return {
       status: HealthStatus.HEALTHY,
-      details: {
-        loki: {
-          connected: true, // Would be actual check in production
-          latency: 0,
-        },
-        filesystem: {
-          available: true,
-        },
-      },
+      enabled: false,
+      message: 'Loki disabled',
+    };
+  }
+
+  const baseUrl = `${lokiConfig.protocol}://${lokiConfig.host}:${lokiConfig.port}`;
+  const start = Date.now();
+
+  try {
+    const requestConfig: AxiosRequestConfig = {
+      timeout: lokiConfig.timeout ?? 5000,
+      validateStatus: () => true,
+    };
+
+    if (lokiConfig.basicAuth) {
+      requestConfig.auth = {
+        username: lokiConfig.basicAuth.username,
+        password: lokiConfig.basicAuth.password,
+      };
+    }
+
+    const response = await axios.get(`${baseUrl}/ready`, requestConfig);
+    const latency = Date.now() - start;
+
+    if (response.status >= 200 && response.status < 400) {
+      return {
+        status: HealthStatus.HEALTHY,
+        connected: true,
+        latencyMs: latency,
+        endpoint: `${baseUrl}/ready`,
+        statusCode: response.status,
+      };
+    }
+
+    return {
+      status: HealthStatus.DEGRADED,
+      connected: false,
+      latencyMs: latency,
+      statusCode: response.status,
+      message: 'Loki responded with non-OK status',
     };
   } catch (error) {
     return {
       status: HealthStatus.UNHEALTHY,
-      details: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+      connected: false,
+      endpoint: `${baseUrl}/ready`,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function checkFilesystemAccess(
+  enabled: boolean,
+  logPath: string
+): Promise<{ status: HealthStatus; [key: string]: unknown }> {
+  if (!enabled) {
+    return {
+      status: HealthStatus.HEALTHY,
+      enabled: false,
+      message: 'File transport disabled',
+    };
+  }
+
+  const resolvedPath = resolvePath(logPath ?? './logs');
+
+  try {
+    await access(resolvedPath, fsConstants.W_OK);
+    return {
+      status: HealthStatus.HEALTHY,
+      path: resolvedPath,
+      writable: true,
+    };
+  } catch (error) {
+    return {
+      status: HealthStatus.UNHEALTHY,
+      path: resolvedPath,
+      writable: false,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -169,13 +254,16 @@ function checkTransportHealth(): HealthCheckResult['checks']['transport'] {
  * Express middleware for health check endpoint
  */
 export function healthCheckMiddleware() {
-  return (req: { path: string; method: string }, res: {
-    status: (code: number) => { json: (data: unknown) => void };
-    json: (data: unknown) => void;
-  }, next?: () => void) => {
-    // Only handle /health/logs endpoint
+  return async (
+    req: { path: string; method: string },
+    res: {
+      status: (code: number) => { json: (data: unknown) => void };
+      json: (data: unknown) => void;
+    },
+    next?: () => void
+  ) => {
     if (req.path === '/health/logs' && req.method === 'GET') {
-      const result = performHealthCheck();
+      const result = await performHealthCheck();
       const statusCode = result.status === HealthStatus.HEALTHY ? 200 : 503;
       res.status(statusCode).json(result);
       return;
@@ -196,7 +284,9 @@ export function getHealthStatusMessage(result: HealthCheckResult): string {
 
   parts.push(`Overall Status: ${status.toUpperCase()}`);
   parts.push(`Logger: ${checks.logger.status.toUpperCase()}`);
-  parts.push(`Memory: ${checks.memory.status.toUpperCase()} (${(checks.memory.details['heapUsedPercent'])}%)`);
+  parts.push(
+    `Memory: ${checks.memory.status.toUpperCase()} (${checks.memory.details['heapUsedPercent']}%)`
+  );
   parts.push(`Transport: ${checks.transport.status.toUpperCase()}`);
 
   return parts.join(' | ');

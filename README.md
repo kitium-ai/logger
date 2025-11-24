@@ -34,6 +34,7 @@ This package implements a **complete, production-ready structured logging system
 ### Implementation Highlights
 
 **For Quick Reference:**
+
 - 📄 **[STRUCTURED_LOGGING_IMPLEMENTATION.md](./STRUCTURED_LOGGING_IMPLEMENTATION.md)** - Detailed feature verification with code examples
 - 📊 **5 Logger Types**: Console, File, InMemory, Central (Loki)
 - 🔒 **Security**: Automatic sensitive field redaction, Loki basic auth
@@ -306,7 +307,7 @@ contextManager.run(
   () => {
     // All logs in this scope will have traceId and userId
     getLogger().info('Processing with context');
-  },
+  }
 );
 ```
 
@@ -381,7 +382,7 @@ const result = await withErrorLogging(
   {
     operation: 'Fetch user data',
     metadata: { userId },
-  },
+  }
 );
 // Automatically logs errors and timing
 ```
@@ -497,7 +498,7 @@ app.use(
   userContextMiddleware((req) => {
     // Custom extraction logic
     return req.user?.id || req.get('x-user-id');
-  }),
+  })
 );
 ```
 
@@ -631,6 +632,7 @@ Complete guide for migrating from various logging solutions to **@kitiumai/logge
 ### Quick Migration Steps
 
 1. **Install the Package**
+
    ```bash
    npm install @kitiumai/logger
    # or
@@ -640,6 +642,7 @@ Complete guide for migrating from various logging solutions to **@kitiumai/logge
    ```
 
 2. **Initialize in Your App**
+
    ```typescript
    import { LoggerBuilder, LoggerType } from '@kitiumai/logger';
 
@@ -658,6 +661,7 @@ Complete guide for migrating from various logging solutions to **@kitiumai/logge
 ### Migration Strategies
 
 **Strategy 1: Gradual Migration (Recommended)**
+
 - Install the package
 - Create a singleton logger instance
 - Replace logging statements progressively
@@ -665,12 +669,14 @@ Complete guide for migrating from various logging solutions to **@kitiumai/logge
 - Commit changes
 
 **Strategy 2: Automated Migration**
+
 - Use the migration script: `npm run migrate`
 - Review the generated changes
 - Test thoroughly
 - Commit changes
 
 **Strategy 3: Wrapper Pattern**
+
 ```typescript
 // logger-adapter.ts
 import { getLogger } from '@kitiumai/logger';
@@ -686,6 +692,7 @@ export const logger = {
 ### Before & After Examples
 
 **From console.log:**
+
 ```typescript
 // Before
 console.log('User logged in:', userId);
@@ -697,6 +704,7 @@ logger.error('Database error', { message: err.message }, err);
 ```
 
 **From Winston Logger:**
+
 ```typescript
 // Before
 import winston from 'winston';
@@ -712,6 +720,7 @@ const logger = LoggerBuilder.console('my-app');
 ```
 
 **From Pino Logger:**
+
 ```typescript
 // Before
 import pino from 'pino';
@@ -725,6 +734,7 @@ logger.info('User action', { userId: '123' });
 ```
 
 **From Bunyan Logger:**
+
 ```typescript
 // Before
 import bunyan from 'bunyan';
@@ -740,17 +750,20 @@ logger.info('User logged in', { userId: '123', action: 'login' });
 ### Using the Migration Tool
 
 **Run the Interactive Tool:**
+
 ```bash
 npm run migrate
 ```
 
 This tool will:
+
 1. Scan your project for logging statements
 2. Identify which loggers are used
 3. Generate a migration report with statistics
 4. Provide recommendations
 
 **Advanced Options:**
+
 ```bash
 # Scan specific directory
 npm run migrate -- /path/to/project
@@ -765,6 +778,7 @@ npm run migrate -- --ci
 ### Framework Integration Examples
 
 **Express.js:**
+
 ```typescript
 import express from 'express';
 import {
@@ -794,21 +808,54 @@ app.use(errorLoggingMiddleware());
 ```
 
 **Next.js:**
+
 ```typescript
 // lib/logger.ts
 import { LoggerBuilder } from '@kitiumai/logger';
-const logger = LoggerBuilder.console('my-nextjs-app');
-export default logger;
+export const logger = LoggerBuilder.console('my-nextjs-app');
 
 // pages/api/hello.ts
-import logger from '@/lib/logger';
-export default function handler(req, res) {
+import { withNextApiLogger } from '@kitiumai/logger/middleware/next';
+import { logger } from '@/lib/logger';
+
+export default withNextApiLogger(async (req, res) => {
   logger.info('API call', { path: req.url, method: req.method });
   res.status(200).json({ message: 'Hello' });
+});
+
+// app/api/users/route.ts (App Router)
+import { withNextRouteLogger } from '@kitiumai/logger/middleware/next';
+import { logger } from '@/lib/logger';
+
+export const GET = withNextRouteLogger(async (request) => {
+  logger.info('Fetching users (Next Route)', { path: request.nextUrl.pathname });
+  return Response.json({ users: [] });
+});
+```
+
+**NestJS:**
+
+```typescript
+// main.ts
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import {
+  createNestLoggingMiddleware,
+  createNestExceptionFilter,
+} from '@kitiumai/logger/middleware/nest';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.use(createNestLoggingMiddleware());
+  app.useGlobalFilters(createNestExceptionFilter());
+  await app.listen(3000);
 }
+
+bootstrap();
 ```
 
 **Fastify:**
+
 ```typescript
 import Fastify from 'fastify';
 import { LoggerBuilder } from '@kitiumai/logger';
@@ -828,6 +875,7 @@ fastify.get('/hello', async (request, reply) => {
 ### Common Migration Patterns
 
 **Pattern 1: Contextual Logging**
+
 ```typescript
 // Before (Winston)
 const logger = winston.createLogger({
@@ -843,6 +891,7 @@ await logger.withContext({ userId: user.id, requestId: req.id }, async () => {
 ```
 
 **Pattern 2: Error Handling**
+
 ```typescript
 // Before
 logger.error('Operation failed', {
@@ -856,6 +905,7 @@ logger.error('Operation failed', { userId: '123' }, err);
 ```
 
 **Pattern 3: Performance Monitoring**
+
 ```typescript
 import { createTimer } from '@kitiumai/logger';
 
@@ -867,6 +917,7 @@ const { duration, memoryUsed } = timer.end({
 ```
 
 **Pattern 4: Batch Logging**
+
 ```typescript
 import { BatchLogger } from '@kitiumai/logger';
 
@@ -892,20 +943,26 @@ batch.flush(); // Log all at once
 ### Migration Troubleshooting
 
 **Issue: Type Errors with `any` type**
+
 - Solution: Use `unknown` instead and handle narrowing:
+
 ```typescript
 const meta: Record<string, unknown> = {};
 ```
 
 **Issue: Missing Imports**
+
 - Solution: Check package installation and import paths:
+
 ```typescript
 // ✅ Correct
 import { LoggerBuilder } from '@kitiumai/logger';
 ```
 
 **Issue: Logger Not Initialized**
+
 - Solution: Initialize logger before using it:
+
 ```typescript
 import { LoggerBuilder } from '@kitiumai/logger';
 const logger = LoggerBuilder.console('my-app');
@@ -913,7 +970,9 @@ export { logger };
 ```
 
 **Issue: Console Output in Tests**
+
 - Solution: Use InMemoryLogger for testing:
+
 ```typescript
 import { LoggerBuilder, LoggerType } from '@kitiumai/logger';
 const logger = LoggerBuilder.inMemory('test-app');
@@ -930,6 +989,7 @@ This package includes scripts to help migrate existing projects to use **@kitium
 A Node.js script that analyzes your project and provides migration guidance.
 
 **Features:**
+
 - Scans project for existing logging patterns
 - Detects console.log, Winston, Bunyan, Pino, and Debug usage
 - Generates migration report with statistics
@@ -937,6 +997,7 @@ A Node.js script that analyzes your project and provides migration guidance.
 - Identifies files that need updates
 
 **Example Output:**
+
 ```
 🚀 Kitium Logger Migration Tool
 
@@ -954,6 +1015,7 @@ A Node.js script that analyzes your project and provides migration guidance.
 #### 2. TypeScript Version
 
 A TypeScript version of the migration script for advanced use cases.
+
 ```bash
 ts-node scripts/migrate.ts
 ```
@@ -961,12 +1023,14 @@ ts-node scripts/migrate.ts
 ### How to Use Migration Tool
 
 **Step 1: Run the Scanner**
+
 ```bash
 npm run migrate
 ```
 
 **Step 2: Review the Report**
 The tool will show:
+
 - Total logging statements found
 - Types of loggers detected
 - Files that need updating
@@ -974,6 +1038,7 @@ The tool will show:
 
 **Step 3: Follow the Guide**
 The tool provides:
+
 - Installation instructions
 - Code examples for your use case
 - Migration patterns
@@ -983,6 +1048,7 @@ The tool provides:
 Apply the suggested changes to your codebase
 
 **Step 5: Test & Verify**
+
 ```bash
 npm run test
 npm run build
@@ -992,11 +1058,13 @@ npm run lint
 ### Migration Script Options
 
 **Scan specific directory:**
+
 ```bash
 npm run migrate -- /path/to/project
 ```
 
 **Get help:**
+
 ```bash
 npm run migrate:help
 ```
@@ -1007,6 +1075,7 @@ The tool can generate an automated migration script to replace common patterns.
 ### Integration with CI/CD
 
 Add to your pre-commit hook or CI pipeline:
+
 ```bash
 npm run migrate -- --ci
 npm run migrate -- --report migration-report.json
@@ -1019,6 +1088,7 @@ npm run migrate -- --report migration-report.json
 ### ✅ Strengths
 
 **Architecture & Design Patterns (9/10)**
+
 - Multiple logger implementations with strategy pattern
 - Builder pattern for fluent configuration
 - Factory pattern for logger instantiation
@@ -1026,6 +1096,7 @@ npm run migrate -- --report migration-report.json
 - Clear separation of concerns
 
 **Type Safety (9/10)**
+
 - Full TypeScript implementation
 - Well-defined interfaces (ILogger, LogContext, LogEntry)
 - No any types in critical paths
@@ -1033,6 +1104,7 @@ npm run migrate -- --report migration-report.json
 - Proper enums for LogLevel and LoggerType
 
 **Context Propagation (8.5/10)**
+
 - AsyncLocalStorage-based context management
 - Automatic trace/span ID generation (UUID)
 - User and session tracking support
@@ -1040,6 +1112,7 @@ npm run migrate -- --report migration-report.json
 - Context isolation per request
 
 **Multiple Output Targets (8/10)**
+
 - Console, File, InMemory, and Loki support
 - Daily file rotation with configurable retention
 - Loki integration for centralized logging
@@ -1047,6 +1120,7 @@ npm run migrate -- --report migration-report.json
 - Optional console transport with file logging
 
 **Express.js Integration (8/10)**
+
 - Tracing middleware with request/response timing
 - Performance metrics middleware
 - Error logging middleware
@@ -1054,6 +1128,7 @@ npm run migrate -- --report migration-report.json
 - User context extraction middleware
 
 **Security Features (7.5/10)**
+
 - Automatic sensitive field redaction
 - Recursive sanitization for nested objects
 - Loki basic auth support
@@ -1063,11 +1138,13 @@ npm run migrate -- --report migration-report.json
 ### ⚠️ Critical Issues
 
 **1. Testing & Quality (0% Coverage) 🔴 CRITICAL**
+
 - No unit tests in repository
 - Target: >90% code coverage (Google/Netflix standard)
 - Required: Comprehensive test suite for all logger implementations
 
 **2. Error Handling (4/10) 🔴 CRITICAL**
+
 - Missing try-catch blocks in middleware
 - No retry logic with exponential backoff
 - No circuit breaker pattern for Loki
@@ -1075,18 +1152,21 @@ npm run migrate -- --report migration-report.json
 - Fire-and-forget batching without recovery
 
 **3. Performance Issues (5/10) 🔴 CRITICAL**
+
 - Unbounded memory in InMemoryLogger (default 10,000 logs)
 - Missing metrics/observability
 - No memory limits or LRU eviction
 - Slow request detection not configurable
 
 **4. Configuration Management (5/10) 🟠 MAJOR**
+
 - Hardcoded threshold values
 - Missing validation of config values
 - No hot reloading support
 - No dynamic log level changes
 
 **5. Missing Production Features (4/10) 🔴 CRITICAL**
+
 - No structured logging enforcement
 - No log sampling for high-volume services
 - No log aggregation strategy
@@ -1094,14 +1174,14 @@ npm run migrate -- --report migration-report.json
 
 ### 🎯 Comparison with Industry Standards
 
-| Aspect | Current | Google | Amazon | Netflix |
-|--------|---------|--------|--------|---------|
-| Test Coverage | 0% | >95% | >90% | >95% |
-| Error Handling | Basic | Advanced | Advanced | Advanced |
-| Circuit Breakers | ❌ | ✅ | ✅ | ✅ |
-| Metrics/Observability | 🟡 Basic | ✅ Full | ✅ Full | ✅ Full |
-| Performance Monitoring | Partial | Complete | Complete | Complete |
-| Distributed Tracing | Manual | OTEL | OTEL | OTEL |
+| Aspect                 | Current  | Google   | Amazon   | Netflix  |
+| ---------------------- | -------- | -------- | -------- | -------- |
+| Test Coverage          | 0%       | >95%     | >90%     | >95%     |
+| Error Handling         | Basic    | Advanced | Advanced | Advanced |
+| Circuit Breakers       | ❌       | ✅       | ✅       | ✅       |
+| Metrics/Observability  | 🟡 Basic | ✅ Full  | ✅ Full  | ✅ Full  |
+| Performance Monitoring | Partial  | Complete | Complete | Complete |
+| Distributed Tracing    | Manual   | OTEL     | OTEL     | OTEL     |
 
 ### 📋 Top 10 Recommendations
 
@@ -1156,6 +1236,7 @@ These improvements can be done quickly to improve production readiness:
 **Current Status:** NOT READY for production without addressing critical issues
 
 **Recommended Timeline:**
+
 1. Tests - 2 weeks
 2. Error handling - 1 week
 3. Metrics - 1 week
