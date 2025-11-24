@@ -3,7 +3,8 @@
  * Uses @kitiumai/lint as the base configuration
  */
 
-import { baseConfig, typeScriptConfig, securityConfig } from '@kitiumai/lint/eslint';
+import { baseConfig, securityConfig } from '@kitiumai/lint/eslint';
+import typescriptEslintParser from '@typescript-eslint/parser';
 
 export default [
   {
@@ -32,7 +33,49 @@ export default [
     ],
   },
   ...baseConfig,
-  ...typeScriptConfig,
+  {
+    name: 'kitium/logger-typescript',
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parser: typescriptEslintParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: true,
+      },
+    },
+    // Plugin is already defined in baseConfig via tseslint.configs.recommended
+    rules: {
+      // Disable base rules that conflict with TypeScript
+      'no-unused-vars': 'off',
+      'no-undef': 'off',
+      'no-shadow': 'off',
+      // TypeScript rules from @kitiumai/lint
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+      '@typescript-eslint/prefer-optional-chain': 'warn',
+      '@typescript-eslint/require-await': 'warn',
+      '@typescript-eslint/no-namespace': 'off', // Allow namespaces for Express types
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+  {
+    name: 'console-capture-overrides',
+    files: ['**/utils/console-capture.ts'],
+    rules: {
+      'no-console': 'off', // Console capture utility needs to override console
+      'max-lines-per-function': 'off', // Console capture function is complex by design
+    },
+  },
   securityConfig,
   {
     name: 'project-overrides',

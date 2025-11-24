@@ -66,6 +66,14 @@ export {
 } from './utils/logger-utils';
 export type { StructuredLogEntry } from './utils/logger-utils';
 
+// Console capture exports
+export { captureConsole, restoreConsole } from './utils/console-capture';
+export type {
+  ConsoleCapture,
+  ConsoleCaptureEntry,
+  ConsoleCaptureOptions,
+} from './utils/console-capture';
+
 // Error handling exports
 export {
   retryWithBackoff,

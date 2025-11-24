@@ -4,6 +4,12 @@ All notable changes to the @kitiumai/logger package will be documented in this f
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-11-24
+
+### Added
+
+Context aware logger support added
+
 ## [1.4.0] - 2025-11-24
 
 ### Added

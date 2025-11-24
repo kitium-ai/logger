@@ -1,6 +1,6 @@
 {
   "name": "@kitiumai/logger",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "module",
   "description": "Enterprise-ready centralized logging system with Loki integration",
   "main": "dist/index.js",
@@ -41,6 +41,12 @@
       "import": "./dist/utils/logger-utils.js",
       "require": "./dist/utils/logger-utils.js",
       "default": "./dist/utils/logger-utils.js"
+    },
+    "./utils/console-capture": {
+      "types": "./dist/utils/console-capture.d.ts",
+      "import": "./dist/utils/console-capture.js",
+      "require": "./dist/utils/console-capture.js",
+      "default": "./dist/utils/console-capture.js"
     }
   },
   "repository": {
