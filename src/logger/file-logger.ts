@@ -1,8 +1,9 @@
 import * as winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
-import type { ILogger } from './logger.interface';
+
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
+import type { ILogger } from './logger.interface';
 
 /**
  * File-based logger with rotation support
@@ -115,9 +116,9 @@ export class FileLogger implements ILogger {
     this.logger.debug(message, logData);
   }
 
-  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T> {
+  withContext<T>(context: Partial<LogContext>, function_: () => T | Promise<T>): T | Promise<T> {
     const fullContext = contextManager.initContext(context);
-    return contextManager.run(fullContext, () => fn());
+    return contextManager.run(fullContext, () => function_());
   }
 
   child(_metadata: Record<string, unknown>): ILogger {

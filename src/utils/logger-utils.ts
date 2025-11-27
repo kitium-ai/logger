@@ -1,6 +1,6 @@
+import { contextManager } from '../context/async-context';
 import { getLogger } from '../logger/logger';
 import type { LogContext } from '../context/async-context';
-import { contextManager } from '../context/async-context';
 
 /**
  * Create a performance timer for measuring operation duration
@@ -40,14 +40,14 @@ export function createTimer(label = 'Operation') {
  * Wrap async function with automatic error logging
  */
 export async function withErrorLogging<T>(
-  fn: () => Promise<T>,
+  function_: () => Promise<T>,
   context?: { operation: string; metadata?: Record<string, unknown> }
 ): Promise<T> {
   const operation = context?.operation ?? 'Operation';
   const timer = createTimer(operation);
 
   try {
-    const result = await fn();
+    const result = await function_();
     timer.end(context?.metadata);
     return result;
   } catch (error) {
@@ -60,14 +60,14 @@ export async function withErrorLogging<T>(
  * Wrap sync function with automatic error logging
  */
 export function withErrorLoggingSync<T>(
-  fn: () => T,
+  function_: () => T,
   context?: { operation: string; metadata?: Record<string, unknown> }
 ): T {
   const operation = context?.operation ?? 'Operation';
   const timer = createTimer(operation);
 
   try {
-    const result = fn();
+    const result = function_();
     timer.end(context?.metadata);
     return result;
   } catch (error) {
@@ -80,17 +80,17 @@ export function withErrorLoggingSync<T>(
  * Log function entry and exit (useful for debugging)
  */
 export function logFunctionCall<T extends unknown[], R>(
-  fn: (...args: T) => R,
-  fnName: string = fn.name ?? 'anonymous'
+  function_: (...args: T) => R,
+  functionName: string = function_.name ?? 'anonymous'
 ) {
   return (...args: T) => {
-    getLogger().debug(`Entering ${fnName}`, { args });
+    getLogger().debug(`Entering ${functionName}`, { args });
     try {
-      const result = fn(...args);
-      getLogger().debug(`Exiting ${fnName}`, { result });
+      const result = function_(...args);
+      getLogger().debug(`Exiting ${functionName}`, { result });
       return result;
     } catch (error) {
-      getLogger().error(`Error in ${fnName}`, { args }, error as Error);
+      getLogger().error(`Error in ${functionName}`, { args }, error as Error);
       throw error;
     }
   };

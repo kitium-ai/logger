@@ -1,13 +1,14 @@
+import { LogLevel } from '../config/logger.config';
+import { initializeLogger } from '../index';
 import {
-  tracingMiddleware,
-  performanceMetricsMiddleware,
-  errorLoggingMiddleware,
   bodyLoggingMiddleware,
+  errorLoggingMiddleware,
+  performanceMetricsMiddleware,
+  tracingMiddleware,
   userContextMiddleware,
 } from '../middleware/express-middleware';
-import { initializeLogger } from '../index';
-import { LogLevel } from '../config/logger.config';
-import type { Request, Response, NextFunction } from 'express';
+
+import type { NextFunction, Request, Response } from 'express';
 
 const HTTP_METHOD_GET = 'GET';
 const TYPE_FUNCTION = 'function';
@@ -208,7 +209,7 @@ describe('Express Middleware', () => {
 
   describe('userContextMiddleware', () => {
     it('should create middleware function with extractor', () => {
-      const extractor = (req: Request) => req.headers['x-user-id'] as string;
+      const extractor = (request: Request) => request.headers['x-user-id'] as string;
       const middleware = userContextMiddleware(extractor);
       expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
@@ -246,7 +247,7 @@ describe('Express Middleware', () => {
     });
 
     it('should handle request with user ID header', (done) => {
-      const userExtractor = (req: Request) => req.get('x-user-id');
+      const userExtractor = (request: Request) => request.get('x-user-id');
 
       const middleware = userContextMiddleware(userExtractor);
       mockNext.mockImplementation(() => {
@@ -259,8 +260,8 @@ describe('Express Middleware', () => {
 
   describe('middleware ordering and integration', () => {
     it('should chain multiple middleware', (done) => {
-      const middleware1 = jest.fn((_req, _res, next) => next());
-      const middleware2 = jest.fn((_req, _res, next) => next());
+      const middleware1 = jest.fn((_request, _res, next) => next());
+      const middleware2 = jest.fn((_request, _res, next) => next());
       const middleware3 = jest.fn(() => {
         done();
       });

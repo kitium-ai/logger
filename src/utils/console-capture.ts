@@ -84,13 +84,13 @@ export function captureConsole(options: ConsoleCaptureOptions = {}): ConsoleCapt
       const timestamp = Date.now();
 
       // Redact sensitive data if enabled
-      const sanitizedArgs = redactSensitive
-        ? args.map((arg) => sanitizeData(arg, sensitiveFields))
+      const sanitizedArguments = redactSensitive
+        ? args.map((argument) => sanitizeData(argument, sensitiveFields))
         : args;
 
       const entry: ConsoleCaptureEntry = {
         level,
-        message: sanitizedArgs.map((arg) => String(arg)),
+        message: sanitizedArguments.map((argument) => String(argument)),
         timestamp,
         traceId: context.traceId,
         ...(context.spanId !== undefined && { spanId: context.spanId }),
@@ -102,7 +102,7 @@ export function captureConsole(options: ConsoleCaptureOptions = {}): ConsoleCapt
 
       // Auto-log to logger if enabled
       if (autoLogToLogger) {
-        const logMessage = sanitizedArgs.map((arg) => String(arg)).join(' ');
+        const logMessage = sanitizedArguments.map((argument) => String(argument)).join(' ');
         const metadata = {
           ...context.metadata,
           consoleCapture: true,

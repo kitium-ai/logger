@@ -83,11 +83,8 @@ export const getLoggerConfig = (): LoggerConfig => {
     circuitBreaker: {
       failureThreshold: parseInt(process.env['LOKI_FAILURE_THRESHOLD'] ?? '5', 10),
       resetTimeoutMs: parseInt(process.env['LOKI_RESET_TIMEOUT_MS'] ?? '60000', 10),
-      fallbackTransport: (process.env['LOKI_FALLBACK'] as
-        | 'console'
-        | 'file'
-        | 'none'
-        | undefined) ?? 'console',
+      fallbackTransport:
+        (process.env['LOKI_FALLBACK'] as 'console' | 'file' | 'none' | undefined) ?? 'console',
     },
   };
 
@@ -148,15 +145,15 @@ export function getPresetConfig(
   return { ...base, ...overrides, loki: { ...base.loki, ...overrides.loki } };
 }
 
-function parseLokiLabels(labelsStr?: string): Record<string, string> {
-  if (!labelsStr) return {};
+function parseLokiLabels(labelsString?: string): Record<string, string> {
+  if (!labelsString) return {};
 
   try {
-    return JSON.parse(labelsStr);
+    return JSON.parse(labelsString);
   } catch {
     // Try parsing as comma-separated key=value pairs
     const labels: Record<string, string> = {};
-    labelsStr.split(',').forEach((pair) => {
+    labelsString.split(',').forEach((pair) => {
       const [key, value] = pair.split('=');
       if (key && value) {
         labels[key.trim()] = value.trim();

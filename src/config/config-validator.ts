@@ -1,6 +1,6 @@
-import { LogLevel } from './logger.config';
-import type { LoggerConfig } from './logger.config';
 import { getLogger } from '../logger/logger';
+import type { LoggerConfig } from './logger.config';
+import { LogLevel } from './logger.config';
 
 /**
  * Configuration validation errors
@@ -183,11 +183,11 @@ export function parseFileSize(size: string): number {
     throw new Error(`Invalid file size format: ${size}`);
   }
 
-  const [, numberStr, unit] = match;
-  if (!numberStr) {
+  const [, numberString, unit] = match;
+  if (!numberString) {
     throw new Error(`Invalid file size format: ${size}`);
   }
-  const number = parseFloat(numberStr);
+  const number = parseFloat(numberString);
 
   const multipliers: Record<string, number> = {
     K: 1024,

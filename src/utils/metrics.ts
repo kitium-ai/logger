@@ -58,10 +58,10 @@ export class Gauge {
 
     for (const [key, value] of this.labelsMap.entries()) {
       const labels = JSON.parse(key);
-      const labelsStr = Object.entries(labels)
+      const labelsString = Object.entries(labels)
         .map(([k, v]) => `${k}="${v}"`)
         .join(',');
-      output += `${this.name}{${labelsStr}} ${value}\n`;
+      output += `${this.name}{${labelsString}} ${value}\n`;
     }
 
     return output;
@@ -105,10 +105,10 @@ export class Counter {
 
     for (const [key, value] of this.labelsMap.entries()) {
       const labels = JSON.parse(key);
-      const labelsStr = Object.entries(labels)
+      const labelsString = Object.entries(labels)
         .map(([k, v]) => `${k}="${v}"`)
         .join(',');
-      output += `${this.name}{${labelsStr}} ${value}\n`;
+      output += `${this.name}{${labelsString}} ${value}\n`;
     }
 
     return output;

@@ -1,5 +1,5 @@
-import { CentralLogger } from '../logger/logger';
 import { LogLevel } from '../config/logger.config';
+import { CentralLogger } from '../logger/logger';
 import type { LoggerConfig } from '../config/logger.config';
 
 /* eslint-disable max-lines-per-function */

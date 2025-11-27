@@ -9,7 +9,7 @@ export type ILogger = {
   info(message: string, meta?: unknown): void;
   http(message: string, meta?: unknown): void;
   debug(message: string, meta?: unknown): void;
-  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T>;
+  withContext<T>(context: Partial<LogContext>, function_: () => T | Promise<T>): T | Promise<T>;
   child(metadata: Record<string, unknown>): ILogger;
   close(): Promise<void>;
 };

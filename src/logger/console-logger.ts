@@ -1,6 +1,6 @@
-import type { ILogger } from './logger.interface';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
+import type { ILogger } from './logger.interface';
 
 /**
  * Console-only logger for simple applications and development
@@ -43,9 +43,9 @@ export class ConsoleLogger implements ILogger {
     this.log('DEBUG', message, meta);
   }
 
-  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T> {
+  withContext<T>(context: Partial<LogContext>, function_: () => T | Promise<T>): T | Promise<T> {
     const fullContext = contextManager.initContext(context);
-    return contextManager.run(fullContext, () => fn());
+    return contextManager.run(fullContext, () => function_());
   }
 
   child(_metadata: Record<string, unknown>): ILogger {
@@ -64,11 +64,11 @@ export class ConsoleLogger implements ILogger {
     const timestamp = this.includeTimestamp ? `[${new Date().toISOString()}] ` : '';
     const colorCode = this.getColorCode(level);
     const resetCode = this.colors ? '\x1b[0m' : '';
-    const levelStr = this.colors ? `${colorCode}[${level}]${resetCode}` : `[${level}]`;
+    const levelString = this.colors ? `${colorCode}[${level}]${resetCode}` : `[${level}]`;
     const service = `[${this.serviceName}]`;
     const traceId = context.traceId ? ` [trace: ${context.traceId.substring(0, 8)}]` : '';
 
-    let output = `${timestamp}${levelStr} ${service}${traceId} ${message}`;
+    let output = `${timestamp}${levelString} ${service}${traceId} ${message}`;
 
     // Add metadata
     if (meta && Object.keys(meta).length > 0) {

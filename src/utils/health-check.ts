@@ -1,10 +1,12 @@
-import axios, { type AxiosRequestConfig } from 'axios';
-import { access } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
+import { access } from 'node:fs/promises';
 import { resolve as resolvePath } from 'node:path';
-import { getLogger } from '../logger/logger';
-import { getLoggerConfig, type LoggerConfig } from '../config/logger.config';
+
+import axios, { type AxiosRequestConfig } from 'axios';
+
 import { loggerMetrics } from './metrics';
+import { getLoggerConfig, type LoggerConfig } from '../config/logger.config';
+import { getLogger } from '../logger/logger';
 
 /**
  * Health check status
@@ -255,14 +257,14 @@ async function checkFilesystemAccess(
  */
 export function healthCheckMiddleware() {
   return async (
-    req: { path: string; method: string },
+    request: { path: string; method: string },
     res: {
       status: (code: number) => { json: (data: unknown) => void };
       json: (data: unknown) => void;
     },
     next?: () => void
   ) => {
-    if (req.path === '/health/logs' && req.method === 'GET') {
+    if (request.path === '/health/logs' && request.method === 'GET') {
       const result = await performHealthCheck();
       const statusCode = result.status === HealthStatus.HEALTHY ? 200 : 503;
       res.status(statusCode).json(result);

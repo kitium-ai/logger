@@ -1,19 +1,20 @@
 import type { Request, Response } from 'express';
 import express from 'express';
+
 import {
-  initializeLogger,
+  addMetadata,
+  auditLog,
+  bodyLoggingMiddleware,
+  createTimer,
+  errorLoggingMiddleware,
   getLogger,
   getLoggerConfig,
-  tracingMiddleware,
-  errorLoggingMiddleware,
-  bodyLoggingMiddleware,
-  performanceMetricsMiddleware,
-  userContextMiddleware,
-  addMetadata,
-  createTimer,
-  withErrorLogging,
+  initializeLogger,
   LoggableError,
-  auditLog,
+  performanceMetricsMiddleware,
+  tracingMiddleware,
+  userContextMiddleware,
+  withErrorLogging,
 } from '../index';
 
 /**
@@ -35,14 +36,14 @@ app.use(tracingMiddleware()); // Should be first to capture all requests
 app.use(bodyLoggingMiddleware(['password', 'apiKey', 'token'])); // Log request bodies with sensitive field filtering
 app.use(performanceMetricsMiddleware()); // Track performance
 app.use(
-  userContextMiddleware((req) => {
+  userContextMiddleware((request) => {
     // Custom user ID extraction logic
-    return (req.headers['x-user-id'] as string) ?? null;
+    return (request.headers['x-user-id'] as string) ?? null;
   })
 );
 
 // Routes
-app.get('/health', (_req: Request, res: Response) => {
+app.get('/health', (_request: Request, res: Response) => {
   getLogger().info('Health check requested');
   res.json({
     status: 'healthy',
@@ -52,13 +53,13 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-app.get('/api/users/:id', (req: Request, res: Response) => {
+app.get('/api/users/:id', (request: Request, res: Response) => {
   const timer = createTimer('Fetch user');
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   (async () => {
     try {
-      const userId = req.params['id'];
+      const userId = request.params['id'];
 
       // Add metadata to logs for this request
       addMetadata('userId', userId);
@@ -91,14 +92,14 @@ app.get('/api/users/:id', (req: Request, res: Response) => {
   })();
 });
 
-app.post('/api/users', (req: Request, res: Response) => {
-  const { email, name } = req.body;
+app.post('/api/users', (request: Request, res: Response) => {
+  const { email, name } = request.body;
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   withErrorLogging(
     async () => {
       // Audit log for user creation
-      auditLog('CREATE', 'user', req.get('x-user-id'), { email, name });
+      auditLog('CREATE', 'user', request.get('x-user-id'), { email, name });
 
       // Simulate user creation
       await new Promise((resolve) => {
@@ -112,7 +113,7 @@ app.post('/api/users', (req: Request, res: Response) => {
   );
 });
 
-app.get('/api/data', (_req: Request, res: Response) => {
+app.get('/api/data', (_request: Request, res: Response) => {
   const timer = createTimer('Fetch data');
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -141,7 +142,7 @@ app.get('/api/data', (_req: Request, res: Response) => {
   })();
 });
 
-app.get('/api/slow', (_req: Request, res: Response) => {
+app.get('/api/slow', (_request: Request, res: Response) => {
   // This will trigger slow request warning
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   (async () => {
@@ -153,15 +154,15 @@ app.get('/api/slow', (_req: Request, res: Response) => {
   })();
 });
 
-app.get('/api/error', (_req: Request, _res: Response) => {
+app.get('/api/error', (_request: Request, _res: Response) => {
   throw new Error('Intentional error for testing');
 });
 
 // 404 handler
-app.use((req: Request, res: Response) => {
+app.use((request: Request, res: Response) => {
   getLogger().warn('Route not found', {
-    method: req.method,
-    path: req.path,
+    method: request.method,
+    path: request.path,
   });
   res.status(404).json({ error: 'Not found' });
 });

@@ -1,6 +1,7 @@
 import type { EventEmitter } from 'node:events';
-import { contextManager } from '../context/async-context';
+
 import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
 import { getLogger } from '../logger/logger';
 import { addMetadata } from './express-middleware';
 
@@ -31,12 +32,12 @@ type NextFunction = () => void;
 
 export class NestLoggerMiddleware {
   use(
-    req: { headers?: Record<string, string>; method?: string; url?: string; ip?: string },
+    request: { headers?: Record<string, string>; method?: string; url?: string; ip?: string },
     res: EventEmitter & { statusCode?: number },
     next: NextFunction
   ) {
     const partialContext: Partial<LogContext> = {};
-    const headers = req.headers ?? {};
+    const headers = request.headers ?? {};
 
     const traceId = headers[HEADER_TRACE_ID];
     const spanId = headers[HEADER_SPAN_ID];
@@ -55,15 +56,15 @@ export class NestLoggerMiddleware {
     const context = contextManager.initContext(partialContext);
 
     contextManager.run(context, () => {
-      addMetadata('ip', req.ip);
-      addMetadata('method', req.method);
-      addMetadata('path', req.url);
+      addMetadata('ip', request.ip);
+      addMetadata('method', request.method);
+      addMetadata('path', request.url);
 
       const start = Date.now();
       const logCompletion = () => {
         getLogger().http('Nest request completed', {
-          method: req.method,
-          path: req.url,
+          method: request.method,
+          path: request.url,
           statusCode: res.statusCode,
           duration: Date.now() - start,
         });
@@ -79,9 +80,9 @@ export class NestLoggerMiddleware {
 export function createNestExceptionFilter() {
   return {
     catch(exception: unknown, host: NestExecutionContextLike) {
-      const ctx = host.switchToHttp();
-      const response = ctx.getResponse();
-      const request = ctx.getRequest();
+      const context = host.switchToHttp();
+      const response = context.getResponse();
+      const request = context.getRequest();
 
       getLogger().error('Nest exception caught', {
         method: request?.method,
