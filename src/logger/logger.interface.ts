@@ -21,6 +21,8 @@ export type LogEntry = {
   timestamp: string;
   level: string;
   message: string;
+  service: string;
+  environment: string;
   metadata?: unknown;
   error?: {
     message: string;
@@ -33,5 +35,6 @@ export type LogEntry = {
     requestId?: string;
     sessionId?: string;
     correlationId?: string;
+    metadata?: Record<string, unknown>;
   };
 };

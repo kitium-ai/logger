@@ -65,6 +65,29 @@ getLogger().info('Application started');
 getLogger().error('An error occurred', { userId: '123' }, error);
 ```
 
+### One-line presets (happy path)
+
+```typescript
+import { createLogger } from '@kitiumai/logger';
+
+// Automatically applies environment defaults:
+// - development: pretty console
+// - staging: console + file
+// - production: Loki + file, sampling, circuit breaker
+const logger = createLogger('production');
+
+logger.info('Bootstrap complete');
+```
+
+You can also override any field without building a full config object:
+
+```typescript
+const logger = createLogger('staging', {
+  samplingRate: 0.5,
+  loki: { enabled: true, batchSize: 200 },
+});
+```
+
 ### Express.js Integration
 
 ```typescript
@@ -100,6 +123,23 @@ app.listen(3000, () => {
   getLogger().info('Server started on port 3000');
 });
 ```
+
+### Context bridges (Express, Next.js, OpenTelemetry)
+
+```typescript
+import { bridgeExpressRequest, bridgeOpenTelemetryContext } from '@kitiumai/logger';
+
+// Express request handler
+app.use((req, _res, next) => {
+  bridgeExpressRequest(req); // pulls traceparent/B3/user headers into contextManager
+  next();
+});
+
+// Inside any function running under OpenTelemetry span
+bridgeOpenTelemetryContext();
+```
+
+For framework-agnostic scenarios, use `bridgeHeadersToContext` to hydrate the async context from a raw headers object.
 
 ## Logger Types
 
@@ -172,6 +212,29 @@ logger.info('Application started');
 ```
 
 **Best for:** Microservices, Kubernetes, cloud deployments, centralized log analysis
+
+## Standard log schema and validation
+
+All transports normalize entries to a common schema before emission. Required fields:
+
+- `timestamp`, `level`, `message`
+- `service`, `environment`
+- Correlation fields: `traceId`, `spanId`, `requestId`, `sessionId`, `correlationId`, `userId`
+- Optional `metadata` and structured `error` payloads
+
+Schema enforcement is on by default (`LOG_ENFORCE_SCHEMA=true`) and fills missing fields from the async context. Set `samplingRate` (0–1) to curb noisy logs without changing code; logs are dropped probabilistically before formatting.
+
+```typescript
+import { getLoggerConfig, initializeLogger } from '@kitiumai/logger';
+
+const config = getLoggerConfig();
+config.enforceSchema = true;
+config.samplingRate = 0.25; // keep 25% of debug chatter
+
+initializeLogger(config);
+```
+
+If Loki becomes unhealthy, the built-in circuit breaker pauses the transport and keeps logging to console/file based on the configured fallback, then retries after the cool-down.
 
 ## Using the Builder Pattern
 
