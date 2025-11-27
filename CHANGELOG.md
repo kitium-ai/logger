@@ -148,30 +148,17 @@ Migration scripts for existing log data to new structured format
 
 ## [Unreleased]
 
+### Added
+
+- **Standard log schema contract** that normalizes core fields across all transports and fills gaps from async context.
+- **Preset-based logger bootstrap** via `createLogger` and `getPresetConfig` for development, staging, and production defaults.
+- **Context bridges** for Express headers, framework-agnostic headers, and OpenTelemetry active spans.
+- **Operational safeguards** including configurable sampling and a Loki circuit breaker with fallback routing.
+
 ### Documentation
 
-- **Structured Logging Implementation Verification** - Comprehensive documentation of all implemented features
-  - Created `STRUCTURED_LOGGING_IMPLEMENTATION.md` with detailed feature verification matrix
-  - Documented all 5 log levels with usage examples
-  - Verified Winston + Grafana Loki centralized aggregation
-  - Verified JSON/console/structured log formatting standards
-  - Verified 5+ Express middleware functions for request/response logging
-  - Verified performance logging with timers, memory tracking, and metrics
-  - Documented distributed tracing capabilities (trace ID, span ID, request ID, session ID, correlation ID)
-  - Verified sensitive data protection with recursive field redaction
-  - Documented error handling with stack traces and structured logging
-  - Verified type safety with comprehensive TypeScript support
-  - Created integration examples and production best practices guide
+- README updates covering presets, schema enforcement, sampling, circuit breakers, and context bridge examples.
 
-### Planned Features
+### Technical
 
-- [ ] Add structured logging tests (Priority: Critical)
-- [ ] Add comprehensive unit tests with >90% coverage (Priority: Critical)
-- [ ] Implement error handling and recovery with circuit breakers (Priority: Critical)
-- [ ] Add observability/metrics with Prometheus export (Priority: Critical)
-- [ ] Add OpenTelemetry integration (Priority: High)
-- [ ] Add configuration validation with schema validation (Priority: High)
-- [ ] Implement graceful shutdown and resource cleanup (Priority: Medium)
-- [ ] Add performance/load tests and benchmarks (Priority: Medium)
-- [ ] Add health check endpoints (Priority: Medium)
-- [ ] Add integration tests with real Loki instance (Priority: Medium)
+- Adopted the @kitiumai/lint v2 API surface in eslint.config.js to align with the latest configuration exports.

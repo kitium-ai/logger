@@ -4,6 +4,7 @@ import type { ILogger } from './logger.interface';
 import type { LoggerConfig } from '../config/logger.config';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
+import { applySchemaContract } from '../utils/log-schema';
 
 const customLevels = {
   levels: {
@@ -25,6 +26,8 @@ const customLevels = {
 export class CentralLogger implements ILogger {
   private logger: winston.Logger;
   private readonly config: LoggerConfig;
+  private lokiFailureCount = 0;
+  private lokiCircuitOpen = false;
 
   constructor(config: LoggerConfig, existingLogger?: winston.Logger) {
     this.config = config;
@@ -35,13 +38,22 @@ export class CentralLogger implements ILogger {
   private createLogger(): winston.Logger {
     const transports: winston.transport[] = [];
 
+    const samplingRate = this.normalizeSamplingRate(this.config.samplingRate);
+    const samplingFilter = winston.format((info) => {
+      if (samplingRate >= 1) return info;
+      return Math.random() <= samplingRate ? info : false;
+    });
+
     // Console transport
     if (this.config.enableConsoleTransport) {
       transports.push(
         new winston.transports.Console({
           format: winston.format.combine(
+            samplingFilter(),
             winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format.colorize(),
+            this.enrichWithContext(),
+            this.schemaValidator(),
             winston.format.printf(this.formatConsoleLog.bind(this))
           ),
         })
@@ -56,7 +68,14 @@ export class CentralLogger implements ILogger {
           level: 'error',
           maxsize: this.parseFileSize(this.config.maxFileSize),
           maxFiles: this.config.maxFiles,
-          format: winston.format.json(),
+          format: winston.format.combine(
+            samplingFilter(),
+            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.errors({ stack: true }),
+            this.enrichWithContext(),
+            this.schemaValidator(),
+            winston.format.json()
+          ),
         })
       );
 
@@ -65,7 +84,14 @@ export class CentralLogger implements ILogger {
           filename: `${this.config.fileLogPath}/combined.log`,
           maxsize: this.parseFileSize(this.config.maxFileSize),
           maxFiles: this.config.maxFiles,
-          format: winston.format.json(),
+          format: winston.format.combine(
+            samplingFilter(),
+            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.errors({ stack: true }),
+            this.enrichWithContext(),
+            this.schemaValidator(),
+            winston.format.json()
+          ),
         })
       );
     }
@@ -86,14 +112,19 @@ export class CentralLogger implements ILogger {
             basicAuth: `${this.config.loki.basicAuth.username}:${this.config.loki.basicAuth.password}`,
           }),
           format: winston.format.combine(
+            samplingFilter(),
             winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format.errors({ stack: true }),
             this.enrichWithContext(),
+            this.schemaValidator(),
             winston.format.json()
           ),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
       );
+
+      const lokiTransport = transports[transports.length - 1] as LokiTransport;
+      this.registerLokiHealth(lokiTransport);
     }
 
     return winston.createLogger({
@@ -133,6 +164,68 @@ export class CentralLogger implements ILogger {
       }
       return info;
     })();
+  }
+
+  private schemaValidator() {
+    if (this.config.enforceSchema === false) {
+      return winston.format((info) => info)();
+    }
+    return applySchemaContract(this.config);
+  }
+
+  private normalizeSamplingRate(rate: number | undefined): number {
+    if (rate === undefined || Number.isNaN(rate)) return 1;
+    if (rate < 0) return 0;
+    if (rate > 1) return 1;
+    return rate;
+  }
+
+  private registerLokiHealth(transport: LokiTransport): void {
+    const threshold = this.config.loki.circuitBreaker?.failureThreshold ?? 5;
+    const resetTimeout = this.config.loki.circuitBreaker?.resetTimeoutMs ?? 60000;
+
+    transport.on('error', (error: Error) => {
+      this.lokiFailureCount += 1;
+      this.logger.warn('Loki transport error detected', {
+        error: error.message,
+        lokiFailureCount: this.lokiFailureCount,
+      });
+
+      if (this.lokiFailureCount >= threshold && !this.lokiCircuitOpen) {
+        this.lokiCircuitOpen = true;
+        transport.silent = true;
+        this.logger.error('Loki circuit opened, routing logs to fallback transport', {
+          threshold,
+          resetTimeout,
+        });
+        this.routeFallback(error);
+        setTimeout(() => {
+          this.lokiFailureCount = 0;
+          this.lokiCircuitOpen = false;
+          transport.silent = false;
+          this.logger.info('Loki circuit closed, resuming transport');
+        }, resetTimeout);
+      }
+    });
+  }
+
+  private routeFallback(error: Error): void {
+    const fallback = this.config.loki.circuitBreaker?.fallbackTransport ?? 'console';
+    const meta = {
+      fallback,
+      error: error.message,
+    };
+
+    if (fallback === 'none') {
+      this.logger.warn('Dropping logs because Loki is unavailable and fallback is disabled', meta);
+      return;
+    }
+
+    if (fallback === 'file' && !this.config.enableFileTransport) {
+      this.logger.warn('File fallback requested but file transport is disabled; using console instead', meta);
+    }
+
+    this.logger.warn('Routing Loki logs to fallback transport', meta);
   }
 
   private formatConsoleLog(info: winston.Logform.TransformableInfo): string {

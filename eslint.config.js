@@ -3,7 +3,7 @@
  * Uses @kitiumai/lint as the base configuration
  */
 
-import { baseConfig, securityConfig } from '@kitiumai/lint/eslint';
+import { eslintBaseConfig, eslintSecurityConfig } from '@kitiumai/lint';
 import typescriptEslintParser from '@typescript-eslint/parser';
 
 export default [
@@ -32,7 +32,7 @@ export default [
       '**/scripts/**',
     ],
   },
-  ...baseConfig,
+  ...eslintBaseConfig,
   {
     name: 'kitium/logger-typescript',
     files: ['**/*.ts', '**/*.tsx'],
@@ -76,7 +76,7 @@ export default [
       'max-lines-per-function': 'off', // Console capture function is complex by design
     },
   },
-  securityConfig,
+  eslintSecurityConfig,
   {
     name: 'project-overrides',
     files: ['**/*.{js,jsx,ts,tsx,cjs}'],

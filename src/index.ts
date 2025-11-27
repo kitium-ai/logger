@@ -5,6 +5,7 @@
 
 // Main logger exports
 export { CentralLogger, initializeLogger, getLogger } from './logger/logger';
+export { createLogger } from './logger/create-logger';
 
 // Logger interface
 export type { ILogger, LogEntry } from './logger/logger.interface';
@@ -25,12 +26,18 @@ export {
 export type { LoggerFactoryOptions } from './logger/logger-factory';
 
 // Configuration exports
-export { getLoggerConfig, LogLevel } from './config/logger.config';
-export type { LoggerConfig, LokiConfig } from './config/logger.config';
+export { getLoggerConfig, getPresetConfig, LogLevel } from './config/logger.config';
+export type { LoggerConfig, LokiConfig, LoggerPreset } from './config/logger.config';
 
 // Context management exports
 export { contextManager } from './context/async-context';
 export type { LogContext } from './context/async-context';
+export {
+  bridgeExpressRequest,
+  bridgeHeadersToContext,
+  bridgeNextRequest,
+  bridgeOpenTelemetryContext,
+} from './context/context-bridges';
 
 // Middleware exports
 export {
