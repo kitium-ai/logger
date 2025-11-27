@@ -15,7 +15,7 @@ export type RetryConfig = {
  */
 /* eslint-disable complexity */
 export async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
+  function_: () => Promise<T>,
   config: RetryConfig = {}
 ): Promise<T> {
   const {
@@ -30,7 +30,7 @@ export async function retryWithBackoff<T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await fn();
+      return await function_();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
@@ -78,7 +78,7 @@ export class CircuitBreaker<T> {
   private state: 'closed' | 'open' | 'half-open' = 'closed';
 
   constructor(
-    private readonly fn: () => Promise<T>,
+    private readonly function_: () => Promise<T>,
     private readonly config: {
       failureThreshold?: number;
       resetTimeoutMs?: number;
@@ -104,7 +104,7 @@ export class CircuitBreaker<T> {
     }
 
     try {
-      const result = await this.fn();
+      const result = await this.function_();
 
       // Reset on success
       if (this.state === 'half-open') {
@@ -150,15 +150,15 @@ export class CircuitBreaker<T> {
  * Safe error handler for async operations
  */
 export async function safeAsync<T>(
-  fn: () => Promise<T>,
+  function_: () => Promise<T>,
   errorHandler?: (error: Error) => void
 ): Promise<T | null> {
   try {
-    return await fn();
+    return await function_();
   } catch (error) {
-    const err = error instanceof Error ? error : new Error(String(error));
-    errorHandler?.(err);
-    getLogger().error('Error in async operation', { error: err.message });
+    const error_ = error instanceof Error ? error : new Error(String(error));
+    errorHandler?.(error_);
+    getLogger().error('Error in async operation', { error: error_.message });
     return null;
   }
 }
@@ -167,14 +167,14 @@ export async function safeAsync<T>(
  * Graceful degradation handler
  */
 export async function withGracefulDegradation<T>(
-  primaryFn: () => Promise<T>,
-  fallbackFn: () => Promise<T>,
+  primaryFunction: () => Promise<T>,
+  fallbackFunction: () => Promise<T>,
   context?: { operation?: string; metadata?: Record<string, unknown> }
 ): Promise<T> {
   const operationName = context?.operation ?? 'Operation';
 
   try {
-    return await primaryFn();
+    return await primaryFunction();
   } catch (primaryError) {
     getLogger().warn(`${operationName} primary operation failed, attempting fallback`, {
       ...context?.metadata,
@@ -182,7 +182,7 @@ export async function withGracefulDegradation<T>(
     });
 
     try {
-      return await fallbackFn();
+      return await fallbackFunction();
     } catch (fallbackError) {
       getLogger().error(`${operationName} failed in both primary and fallback operations`, {
         ...context?.metadata,

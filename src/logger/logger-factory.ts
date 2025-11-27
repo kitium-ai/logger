@@ -1,9 +1,9 @@
-import type { ILogger } from './logger.interface';
-import { CentralLogger } from './logger';
-import { InMemoryLogger } from './in-memory-logger';
+import type { LoggerConfig } from '../config/logger.config';
 import { ConsoleLogger } from './console-logger';
 import { FileLogger } from './file-logger';
-import type { LoggerConfig } from '../config/logger.config';
+import { InMemoryLogger } from './in-memory-logger';
+import { CentralLogger } from './logger';
+import type { ILogger } from './logger.interface';
 
 /**
  * Logger type enumeration

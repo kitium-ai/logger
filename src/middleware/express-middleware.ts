@@ -1,9 +1,11 @@
-import type { Request, Response, NextFunction } from 'express';
 import { randomBytes } from 'node:crypto';
+
+import type { NextFunction,Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getLogger } from '../logger/logger';
+
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
+import { getLogger } from '../logger/logger';
 
 const REQUEST_COMPLETED_MSG = 'Request completed';
 const USER_AGENT_HEADER = 'user-agent';
@@ -79,8 +81,8 @@ function parseTraceParent(header?: string): IncomingTraceContext {
 }
 
 // eslint-disable-next-line max-statements, sonarjs/cognitive-complexity
-function parseB3Headers(req: Request): IncomingTraceContext {
-  const b3Combined = req.get('b3') as string | undefined;
+function parseB3Headers(request: Request): IncomingTraceContext {
+  const b3Combined = request.get('b3') as string | undefined;
   if (b3Combined) {
     const parts = b3Combined.split('-');
     if (parts.length >= 2) {
@@ -99,9 +101,9 @@ function parseB3Headers(req: Request): IncomingTraceContext {
   }
 
   const context: IncomingTraceContext = {};
-  const traceId = (req.get('x-b3-traceid') as string) ?? undefined;
-  const spanId = (req.get('x-b3-spanid') as string) ?? undefined;
-  const parentSpanId = (req.get('x-b3-parentspanid') as string) ?? undefined;
+  const traceId = (request.get('x-b3-traceid') as string) ?? undefined;
+  const spanId = (request.get('x-b3-spanid') as string) ?? undefined;
+  const parentSpanId = (request.get('x-b3-parentspanid') as string) ?? undefined;
 
   if (traceId) {
     context.traceId = traceId;
@@ -116,13 +118,13 @@ function parseB3Headers(req: Request): IncomingTraceContext {
   return context;
 }
 
-function extractTraceContext(req: Request): IncomingTraceContext {
-  const traceParent = parseTraceParent(req.get('traceparent') as string);
+function extractTraceContext(request: Request): IncomingTraceContext {
+  const traceParent = parseTraceParent(request.get('traceparent') as string);
   if (traceParent.traceId && traceParent.spanId) {
     return traceParent;
   }
 
-  const b3Context = parseB3Headers(req);
+  const b3Context = parseB3Headers(request);
   if (b3Context.traceId || b3Context.spanId) {
     return b3Context;
   }
@@ -148,21 +150,22 @@ function isSensitiveValue(value: unknown): boolean {
 /* eslint-disable max-lines-per-function */
 export function tracingMiddleware() {
   /* eslint-disable max-lines-per-function */
-  return (req: Request, res: Response, next: NextFunction) => {
-    const incomingContext = extractTraceContext(req);
+  return (request: Request, res: Response, next: NextFunction) => {
+    const incomingContext = extractTraceContext(request);
 
     const traceId =
       incomingContext.traceId ??
-      (req.get('x-trace-id') as string) ??
-      (req.get('x-request-id') as string) ??
+      (request.get('x-trace-id') as string) ??
+      (request.get('x-request-id') as string) ??
       generateTraceId();
 
-    const spanId = incomingContext.spanId ?? (req.get('x-span-id') as string) ?? generateSpanId();
+    const spanId =
+      incomingContext.spanId ?? (request.get('x-span-id') as string) ?? generateSpanId();
     const requestId = uuidv4();
 
-    const userId = (req.get('x-user-id') as string) ?? null;
-    const sessionId = (req.get('x-session-id') as string) ?? null;
-    const correlationId = (req.get('x-correlation-id') as string) ?? null;
+    const userId = (request.get('x-user-id') as string) ?? null;
+    const sessionId = (request.get('x-session-id') as string) ?? null;
+    const correlationId = (request.get('x-correlation-id') as string) ?? null;
 
     const context: LogContext = {
       traceId,
@@ -185,12 +188,12 @@ export function tracingMiddleware() {
       res.json = function (body) {
         const duration = Date.now() - startTime;
         getLogger().http(REQUEST_COMPLETED_MSG, {
-          method: req.method,
-          path: req.path,
+          method: request.method,
+          path: request.path,
           statusCode: res.statusCode,
           duration,
-          ip: req.ip,
-          userAgent: req.get(USER_AGENT_HEADER),
+          ip: request.ip,
+          userAgent: request.get(USER_AGENT_HEADER),
         });
         return originalJson(body);
       };
@@ -200,23 +203,23 @@ export function tracingMiddleware() {
         if (!res.headersSent) {
           const duration = Date.now() - startTime;
           getLogger().http(REQUEST_COMPLETED_MSG, {
-            method: req.method,
-            path: req.path,
+            method: request.method,
+            path: request.path,
             statusCode: res.statusCode,
             duration,
-            ip: req.ip,
-            userAgent: req.get(USER_AGENT_HEADER),
+            ip: request.ip,
+            userAgent: request.get(USER_AGENT_HEADER),
           });
         }
         return originalSend(data);
       };
 
       getLogger().http('Incoming request', {
-        method: req.method,
-        path: req.path,
-        query: req.query,
-        ip: req.ip,
-        userAgent: req.get('user-agent'),
+        method: request.method,
+        path: request.path,
+        query: request.query,
+        ip: request.ip,
+        userAgent: request.get('user-agent'),
         parentSpanId: incomingContext.parentSpanId,
       });
 
@@ -229,22 +232,22 @@ export function tracingMiddleware() {
  * Middleware to catch and log errors
  */
 export function errorLoggingMiddleware() {
-  return (err: Error | unknown, req: Request, res: Response, _next: NextFunction) => {
+  return (error: Error | unknown, request: Request, res: Response, _next: NextFunction) => {
     const logger = getLogger();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const errAny = err as any;
-    const statusCode = errAny.statusCode ?? errAny.status ?? 500;
-    const message = errAny.message ?? 'Internal Server Error';
-    const stack = errAny.stack ?? (err instanceof Error ? err.stack : null);
+    const errorAny = error as any;
+    const statusCode = errorAny.statusCode ?? errorAny.status ?? 500;
+    const message = errorAny.message ?? 'Internal Server Error';
+    const stack = errorAny.stack ?? (error instanceof Error ? error.stack : null);
 
     logger.error(`Request error: ${message}`, {
       statusCode,
-      method: req.method,
-      path: req.path,
+      method: request.method,
+      path: request.path,
       stack,
-      query: req.query,
-      body: sanitizeBody(req.body),
+      query: request.query,
+      body: sanitizeBody(request.body),
     });
 
     res.status(statusCode).json({
@@ -262,12 +265,12 @@ export function errorLoggingMiddleware() {
  * Middleware to log request body (with sensitive data filtering)
  */
 export function bodyLoggingMiddleware(sensitiveFields: string[] = DEFAULT_SENSITIVE_FIELDS) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
-      const sanitized = sanitizeData(req.body, sensitiveFields);
+  return (request: Request, _res: Response, next: NextFunction) => {
+    if (['POST', 'PUT', 'PATCH'].includes(request.method) && request.body) {
+      const sanitized = sanitizeData(request.body, sensitiveFields);
       getLogger().debug('Request body', {
-        method: req.method,
-        path: req.path,
+        method: request.method,
+        path: request.path,
         body: sanitized,
       });
     }
@@ -279,7 +282,7 @@ export function bodyLoggingMiddleware(sensitiveFields: string[] = DEFAULT_SENSIT
  * Middleware to log performance metrics
  */
 export function performanceMetricsMiddleware() {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (request: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
     const startMemory = process.memoryUsage();
 
@@ -295,8 +298,8 @@ export function performanceMetricsMiddleware() {
       if (duration > 1000) {
         // Log slow requests
         getLogger().warn('Slow request detected', {
-          method: req.method,
-          path: req.path,
+          method: request.method,
+          path: request.path,
           duration,
           statusCode: res.statusCode,
           memoryDelta,
@@ -304,8 +307,8 @@ export function performanceMetricsMiddleware() {
       }
 
       getLogger().debug('Performance metrics', {
-        method: req.method,
-        path: req.path,
+        method: request.method,
+        path: request.path,
         duration,
         statusCode: res.statusCode,
         memoryDelta,
@@ -368,13 +371,13 @@ export function sanitizeData(data: unknown, sensitiveFields: string[]): unknown 
 /**
  * Middleware to set user context from request
  */
-export function userContextMiddleware(userIdExtractor?: (req: Request) => string | undefined) {
-  return (req: Request, _res: Response, next: NextFunction) => {
+export function userContextMiddleware(userIdExtractor?: (request: Request) => string | undefined) {
+  return (request: Request, _res: Response, next: NextFunction) => {
     const userId =
-      userIdExtractor?.(req) ??
-      (req.get('x-user-id') as string) ??
+      userIdExtractor?.(request) ??
+      (request.get('x-user-id') as string) ??
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (req.user as any)?.id;
+      (request.user as any)?.id;
 
     if (userId) {
       contextManager.set('userId', userId);

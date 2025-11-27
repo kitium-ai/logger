@@ -1,6 +1,6 @@
-import { getLogger } from '../logger/logger';
-import { contextManager } from '../context/async-context';
 import type { LogContext } from '../context/async-context';
+import { contextManager } from '../context/async-context';
+import { getLogger } from '../logger/logger';
 import { addMetadata } from './express-middleware';
 
 const HEADER_TRACE_ID = 'x-trace-id';
@@ -10,7 +10,7 @@ const HEADER_USER_ID = 'x-user-id';
 const HEADER_SESSION_ID = 'x-session-id';
 const HEADER_CORRELATION_ID = 'x-correlation-id';
 
-type NextApiHandlerLike = (req: NextApiRequestLike, res: NextApiResponseLike) => unknown;
+type NextApiHandlerLike = (request: NextApiRequestLike, res: NextApiResponseLike) => unknown;
 type NextApiRequestLike = {
   headers?: Record<string, string | string[] | undefined>;
   method?: string;
@@ -69,13 +69,15 @@ function headersFromRecord(raw?: Record<string, string | string[] | undefined>):
 }
 
 export function withNextApiLogger(handler: NextApiHandlerLike): NextApiHandlerLike {
-  return async (req, res) => {
-    const headers = headersFromRecord(req.headers);
+  return async (request, res) => {
+    const headers = headersFromRecord(request.headers);
     const partialContext = buildLogContextFromHeaders(headers);
     if (!partialContext.requestId) {
       const fallbackRequestId =
         headers.get(HEADER_TRACE_ID) ??
-        (typeof req.query?.['requestId'] === 'string' ? req.query?.['requestId'] : undefined);
+        (typeof request.query?.['requestId'] === 'string'
+          ? request.query?.['requestId']
+          : undefined);
       if (fallbackRequestId) {
         partialContext.requestId = fallbackRequestId;
       }
@@ -85,13 +87,13 @@ export function withNextApiLogger(handler: NextApiHandlerLike): NextApiHandlerLi
     return contextManager.run(context, async () => {
       const start = Date.now();
       try {
-        addMetadata('ip', req.socket?.remoteAddress);
-        addMetadata('method', req.method);
-        addMetadata('path', req.url);
-        const result = await handler(req, res);
+        addMetadata('ip', request.socket?.remoteAddress);
+        addMetadata('method', request.method);
+        addMetadata('path', request.url);
+        const result = await handler(request, res);
         getLogger().http('Next API request completed', {
-          method: req.method,
-          path: req.url,
+          method: request.method,
+          path: request.url,
           statusCode: res.statusCode,
           duration: Date.now() - start,
         });
@@ -99,7 +101,7 @@ export function withNextApiLogger(handler: NextApiHandlerLike): NextApiHandlerLi
       } catch (error) {
         getLogger().error(
           'Next API handler error',
-          { method: req.method, path: req.url },
+          { method: request.method, path: request.url },
           error as Error
         );
         throw error;
@@ -144,7 +146,7 @@ export function withNextRouteLogger<TResponse>(
   };
 }
 
-export function createNextFetchWrapper(fetchFn: typeof fetch): typeof fetch {
+export function createNextFetchWrapper(fetchFunction: typeof fetch): typeof fetch {
   return async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
     const context = contextManager.getContext();
     const headers = new Headers(init?.headers ?? {});
@@ -156,7 +158,7 @@ export function createNextFetchWrapper(fetchFn: typeof fetch): typeof fetch {
     if (context.sessionId) headers.set(HEADER_SESSION_ID, context.sessionId);
     if (context.correlationId) headers.set(HEADER_CORRELATION_ID, context.correlationId);
 
-    return fetchFn(input, {
+    return fetchFunction(input, {
       ...init,
       headers,
     });

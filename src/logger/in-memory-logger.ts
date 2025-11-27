@@ -1,6 +1,6 @@
-import type { ILogger, LogEntry } from './logger.interface';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
+import type { ILogger, LogEntry } from './logger.interface';
 
 /**
  * In-memory logger for testing, debugging, and development
@@ -43,9 +43,9 @@ export class InMemoryLogger implements ILogger {
     this.addLog('debug', message, meta);
   }
 
-  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T> {
+  withContext<T>(context: Partial<LogContext>, function_: () => T | Promise<T>): T | Promise<T> {
     const fullContext = contextManager.initContext(context);
-    return contextManager.run(fullContext, () => fn());
+    return contextManager.run(fullContext, () => function_());
   }
 
   child(_metadata: Record<string, unknown>): ILogger {
@@ -169,6 +169,8 @@ export class InMemoryLogger implements ILogger {
       timestamp: new Date().toISOString(),
       level,
       message,
+      service: this.serviceName,
+      environment: 'in-memory',
       metadata: enrichedMeta,
       context: {
         traceId: context.traceId,

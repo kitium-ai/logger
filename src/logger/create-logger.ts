@@ -1,18 +1,19 @@
-import { initializeLogger, type ILogger } from './logger';
 import {
   getLoggerConfig,
   getPresetConfig,
   type LoggerConfig,
   type LoggerPreset,
 } from '../config/logger.config';
+import { initializeLogger } from './logger';
+import type { ILogger } from './logger.interface';
 
 export function createLogger(
   presetOrConfig?: LoggerPreset | LoggerConfig,
   overrides: Partial<LoggerConfig> = {}
 ): ILogger {
   if (!presetOrConfig) {
-    const envConfig = getLoggerConfig();
-    return initializeLogger(mergeConfig(envConfig, overrides));
+    const environmentConfig = getLoggerConfig();
+    return initializeLogger(mergeConfig(environmentConfig, overrides));
   }
 
   if (typeof presetOrConfig === 'string') {

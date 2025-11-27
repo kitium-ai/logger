@@ -1,10 +1,11 @@
 import * as winston from 'winston';
 import LokiTransport from 'winston-loki';
-import type { ILogger } from './logger.interface';
+
 import type { LoggerConfig } from '../config/logger.config';
 import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
 import { applySchemaContract } from '../utils/log-schema';
+import type { ILogger } from './logger.interface';
 
 const customLevels = {
   levels: {
@@ -134,7 +135,7 @@ export class CentralLogger implements ILogger {
         service: this.config.serviceName,
         environment: this.config.environment,
         pid: process.pid,
-        hostname: require('os').hostname(),
+        hostname: require('node:os').hostname(),
       },
       transports,
       exceptionHandlers: [
@@ -222,7 +223,10 @@ export class CentralLogger implements ILogger {
     }
 
     if (fallback === 'file' && !this.config.enableFileTransport) {
-      this.logger.warn('File fallback requested but file transport is disabled; using console instead', meta);
+      this.logger.warn(
+        'File fallback requested but file transport is disabled; using console instead',
+        meta
+      );
     }
 
     this.logger.warn('Routing Loki logs to fallback transport', meta);
@@ -251,9 +255,9 @@ export class CentralLogger implements ILogger {
     return message;
   }
 
-  private parseFileSize(sizeStr: string): number {
+  private parseFileSize(sizeString: string): number {
     const units: Record<string, number> = { k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024 };
-    const match = sizeStr.toLowerCase().match(/^(\d+)([kmg])?b?$/);
+    const match = sizeString.toLowerCase().match(/^(\d+)([kmg])?b?$/);
     if (!match?.[1]) return 100 * 1024 * 1024; // Default 100MB
     const value = parseInt(match[1], 10);
     const unit = match[2] ?? 'b';
@@ -292,9 +296,9 @@ export class CentralLogger implements ILogger {
   /**
    * Log with context initialization
    */
-  withContext<T>(context: Partial<LogContext>, fn: () => T | Promise<T>): T | Promise<T> {
+  withContext<T>(context: Partial<LogContext>, function_: () => T | Promise<T>): T | Promise<T> {
     const fullContext = contextManager.initContext(context);
-    return contextManager.run(fullContext, () => fn());
+    return contextManager.run(fullContext, () => function_());
   }
 
   /**

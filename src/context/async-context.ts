@@ -1,4 +1,5 @@
-import { AsyncLocalStorage } from 'async_hooks';
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 import { v4 as uuidv4 } from 'uuid';
 
 export type LogContext = {
@@ -34,8 +35,8 @@ class ContextManager {
   /**
    * Run function within a context
    */
-  run<T>(context: LogContext, fn: () => T): T {
-    return this.asyncLocalStorage.run(context, fn);
+  run<T>(context: LogContext, function_: () => T): T {
+    return this.asyncLocalStorage.run(context, function_);
   }
 
   /**

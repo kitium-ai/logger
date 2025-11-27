@@ -88,8 +88,8 @@ describe('ConsoleLogger', () => {
 
     it('should handle large metadata objects', () => {
       const largeMetadata: Record<string, string> = {};
-      for (let i = 0; i < 50; i++) {
-        largeMetadata[`field_${i}`] = `value_${i}`;
+      for (let index = 0; index < 50; index++) {
+        largeMetadata[`field_${index}`] = `value_${index}`;
       }
       expect(() => {
         logger.info('Large metadata', largeMetadata);

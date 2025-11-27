@@ -1,14 +1,14 @@
+import { LogLevel } from '../config/logger.config';
+import { initializeLogger } from '../index';
 import {
+  auditLog,
+  BatchLogger,
   createTimer,
+  logFunctionCall,
+  LoggableError,
   withErrorLogging,
   withErrorLoggingSync,
-  LoggableError,
-  auditLog,
-  logFunctionCall,
-  BatchLogger,
 } from '../utils/logger-utils';
-import { initializeLogger } from '../index';
-import { LogLevel } from '../config/logger.config';
 
 /* eslint-disable sonarjs/no-duplicate-string -- Constant definition, used throughout tests */
 const TEST_OPERATION = 'Test operation';
@@ -195,23 +195,23 @@ describe('Logger Utils', () => {
 
   describe('logFunctionCall', () => {
     it('should wrap function for logging', () => {
-      const testFn = (a: number, b: number) => a + b;
-      const wrapped = logFunctionCall(testFn, 'add');
+      const testFunction = (a: number, b: number) => a + b;
+      const wrapped = logFunctionCall(testFunction, 'add');
       expect(typeof wrapped).toBe(TYPE_FUNCTION);
     });
 
     it('should execute wrapped function', () => {
-      const testFn = (a: number, b: number) => a + b;
-      const wrapped = logFunctionCall(testFn, 'add');
+      const testFunction = (a: number, b: number) => a + b;
+      const wrapped = logFunctionCall(testFunction, 'add');
       const result = wrapped(2, 3);
       expect(result).toBe(5);
     });
 
     it('should handle function errors', () => {
-      const testFn = () => {
+      const testFunction = () => {
         throw new Error('Test error');
       };
-      const wrapped = logFunctionCall(testFn, 'errorFn');
+      const wrapped = logFunctionCall(testFunction, 'errorFn');
       expect(() => wrapped()).toThrow();
     });
   });

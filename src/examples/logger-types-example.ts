@@ -3,15 +3,16 @@
  * Examples demonstrating different logger types
  */
 
-import type { InMemoryLogger } from '../logger/in-memory-logger';
 import {
+  getGlobalLogger,
+  getLoggerConfig,
+  initGlobalLogger,
   LoggerBuilder,
   LoggerFactory,
   LoggerType,
-  getLoggerConfig,
-  initGlobalLogger,
-  getGlobalLogger,
 } from '../index';
+
+import type { InMemoryLogger } from '../logger/in-memory-logger';
 
 const EXAMPLE_SERVICE_NAME = 'my-app';
 const CUSTOM_SERVICE_NAME = 'custom-app';
@@ -44,8 +45,8 @@ export function exampleInMemoryLogger() {
   const logger = LoggerBuilder.inMemory(EXAMPLE_SERVICE_NAME, 1000) as InMemoryLogger;
 
   // Simulate some logging
-  for (let i = 0; i < 5; i++) {
-    logger.info(`Processing item ${i}`, { itemId: i });
+  for (let index = 0; index < 5; index++) {
+    logger.info(`Processing item ${index}`, { itemId: index });
   }
 
   logger.warn('High memory usage detected', { usage: '85%' });
@@ -214,16 +215,16 @@ export function exampleDynamicLoggerType() {
 export function exampleEnvironmentSetup() {
   console.log('\n=== Environment-based Setup Example ===');
 
-  const isDev = process.env['NODE_ENV'] === 'development';
-  const isProd = process.env['NODE_ENV'] === 'production';
+  const isDevelopment = process.env['NODE_ENV'] === 'development';
+  const isProduction = process.env['NODE_ENV'] === 'production';
 
   let logger;
 
-  if (isDev) {
+  if (isDevelopment) {
     // Development: Console + In-memory for debugging
     console.log('Setting up development logger (console)');
     logger = LoggerBuilder.console('app');
-  } else if (isProd) {
+  } else if (isProduction) {
     // Production: Central (Loki) for cloud-native setup
     console.log('Setting up production logger (central/loki)');
     const config = getLoggerConfig();
