@@ -47,11 +47,12 @@ export class CentralLogger implements ILogger {
 
     // Console transport
     if (this.config.enableConsoleTransport) {
+      const timestampFormat = 'YYYY-MM-DD HH:mm:ss';
       transports.push(
         new winston.transports.Console({
           format: winston.format.combine(
             samplingFilter(),
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.timestamp({ format: timestampFormat }),
             winston.format.colorize(),
             this.enrichWithContext(),
             this.schemaValidator(),

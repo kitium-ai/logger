@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from 'express';
+
 import { LogLevel } from '../config/logger.config';
 import { initializeLogger } from '../index';
 import {
@@ -7,8 +9,6 @@ import {
   tracingMiddleware,
   userContextMiddleware,
 } from '../middleware/express-middleware';
-
-import type { NextFunction, Request, Response } from 'express';
 
 const HTTP_METHOD_GET = 'GET';
 const TYPE_FUNCTION = 'function';
@@ -237,7 +237,7 @@ describe('Express Middleware', () => {
     });
 
     it('should handle extractor returning undefined', (done) => {
-      const extractor = jest.fn().mockReturnValue(undefined);
+      const extractor = jest.fn().mockReturnValue();
       const middleware = userContextMiddleware(extractor);
       mockNext.mockImplementation(() => {
         done();

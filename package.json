@@ -1,52 +1,61 @@
 {
   "name": "@kitiumai/logger",
-  "version": "1.5.0",
+  "version": "2.0.0",
+  "sideEffects": false,
   "type": "module",
   "description": "Enterprise-ready centralized logging system with Loki integration",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "files": [
-    "dist",
-    "scripts",
+    "dist/esm/**/*.js",
+    "dist/cjs/**/*.js",
+    "dist/types/**/*.d.ts",
+    "dist/types/**/*.d.ts.map",
+    "!dist/**/__tests__/**",
+    "!dist/**/examples/**",
+    "!dist/**/*.test.*",
+    "scripts/migrate.cjs",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/esm/index.js"
     },
     "./middleware": {
-      "types": "./dist/middleware/express-middleware.d.ts",
-      "import": "./dist/middleware/express-middleware.js",
-      "require": "./dist/middleware/express-middleware.js",
-      "default": "./dist/middleware/express-middleware.js"
+      "types": "./dist/types/middleware/express-middleware.d.ts",
+      "import": "./dist/esm/middleware/express-middleware.js",
+      "require": "./dist/cjs/middleware/express-middleware.js",
+      "default": "./dist/esm/middleware/express-middleware.js"
     },
     "./middleware/next": {
-      "types": "./dist/middleware/next-middleware.d.ts",
-      "import": "./dist/middleware/next-middleware.js",
-      "require": "./dist/middleware/next-middleware.js",
-      "default": "./dist/middleware/next-middleware.js"
+      "types": "./dist/types/middleware/next-middleware.d.ts",
+      "import": "./dist/esm/middleware/next-middleware.js",
+      "require": "./dist/cjs/middleware/next-middleware.js",
+      "default": "./dist/esm/middleware/next-middleware.js"
     },
     "./middleware/nest": {
-      "types": "./dist/middleware/nest-logger.middleware.d.ts",
-      "import": "./dist/middleware/nest-logger.middleware.js",
-      "require": "./dist/middleware/nest-logger.middleware.js",
-      "default": "./dist/middleware/nest-logger.middleware.js"
+      "types": "./dist/types/middleware/nest-logger.middleware.d.ts",
+      "import": "./dist/esm/middleware/nest-logger.middleware.js",
+      "require": "./dist/cjs/middleware/nest-logger.middleware.js",
+      "default": "./dist/esm/middleware/nest-logger.middleware.js"
     },
     "./utils": {
-      "types": "./dist/utils/logger-utils.d.ts",
-      "import": "./dist/utils/logger-utils.js",
-      "require": "./dist/utils/logger-utils.js",
-      "default": "./dist/utils/logger-utils.js"
+      "types": "./dist/types/utils/logger-utils.d.ts",
+      "import": "./dist/esm/utils/logger-utils.js",
+      "require": "./dist/cjs/utils/logger-utils.js",
+      "default": "./dist/esm/utils/logger-utils.js"
     },
     "./utils/console-capture": {
-      "types": "./dist/utils/console-capture.d.ts",
-      "import": "./dist/utils/console-capture.js",
-      "require": "./dist/utils/console-capture.js",
-      "default": "./dist/utils/console-capture.js"
+      "types": "./dist/types/utils/console-capture.d.ts",
+      "import": "./dist/esm/utils/console-capture.js",
+      "require": "./dist/cjs/utils/console-capture.js",
+      "default": "./dist/esm/utils/console-capture.js"
     }
   },
   "repository": {
@@ -74,7 +83,7 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "format:check": "prettier --check .",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist/esm dist/cjs dist/types",
     "setup:lint": "node node_modules/@kitiumai/lint/scripts/postinstall.js",
     "lint:tslint": "tslint -c tslint.json --project tsconfig.json '**/*.ts'",
     "lint:tslint:fix": "tslint -c tslint.json --project tsconfig.json --fix '**/*.ts'",
@@ -98,15 +107,41 @@
   },
   "keywords": [
     "logging",
-    "structured-logging",
-    "loki",
-    "centralized",
-    "winston",
-    "observability",
-    "kitium",
     "logger",
+    "structured-logging",
+    "centralized-logging",
+    "distributed-logging",
+    "loki",
+    "grafana-loki",
+    "winston",
+    "winston-logger",
+    "observability",
+    "monitoring",
+    "telemetry",
+    "opentelemetry",
+    "tracing",
+    "log-aggregation",
+    "log-management",
+    "express-middleware",
+    "next-middleware",
+    "nestjs-logger",
     "typescript",
     "nodejs",
+    "node-logger",
+    "enterprise",
+    "production-ready",
+    "microservices",
+    "cloud-native",
+    "devops",
+    "sre",
+    "log-rotation",
+    "error-tracking",
+    "performance-monitoring",
+    "contextual-logging",
+    "async-context",
+    "request-tracking",
+    "correlation-id",
+    "kitium",
     "kitiumai"
   ],
   "author": "Kitium AI",

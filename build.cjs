@@ -13,8 +13,12 @@ const distScriptsDir = path.join(distDir, 'scripts');
 
 async function compileTypeScript() {
   const { exec, log } = await import('@kitiumai/scripts/utils');
-  log('info', '📦 Compiling TypeScript...');
-  await exec('tsc', [], { verbose: true, throwOnError: true });
+
+  log('info', '📦 Compiling TypeScript (ESM)...');
+  await exec('tsc', ['-p', 'tsconfig.esm.json'], { verbose: true, throwOnError: true });
+
+  log('info', '📦 Compiling TypeScript (CJS)...');
+  await exec('tsc', ['-p', 'tsconfig.cjs.json'], { verbose: true, throwOnError: true });
 }
 
 async function copyScripts() {
@@ -41,12 +45,34 @@ async function copyScripts() {
   }
 }
 
+async function createPackageJsonFiles() {
+  const { log } = await import('@kitiumai/scripts/utils');
+  log('info', '📝 Creating package.json files for module types...');
+
+  // ESM package.json
+  const esmPackageJson = JSON.stringify({ type: 'module' }, null, 2);
+  const esmPath = path.join(distDir, 'esm', 'package.json');
+  await fsPromises.writeFile(esmPath, esmPackageJson, 'utf-8');
+  log('info', '  ✓ Created esm/package.json');
+
+  // CJS package.json
+  const cjsPackageJson = JSON.stringify({ type: 'commonjs' }, null, 2);
+  const cjsPath = path.join(distDir, 'cjs', 'package.json');
+  await fsPromises.writeFile(cjsPath, cjsPackageJson, 'utf-8');
+  log('info', '  ✓ Created cjs/package.json');
+}
+
 async function build() {
   try {
     await compileTypeScript();
+    await createPackageJsonFiles();
     await copyScripts();
     const { log } = await import('@kitiumai/scripts/utils');
     log('success', '✅ Build complete!');
+    log('info', '📊 Output:');
+    log('info', '  - dist/esm/ (ES Modules - tree-shakable)');
+    log('info', '  - dist/cjs/ (CommonJS - backward compatible)');
+    log('info', '  - dist/types/ (TypeScript declarations)');
     process.exit(0);
   } catch (error) {
     if (error.code === 'ERR_REQUIRE_ESM' || error.message?.includes('Cannot use import')) {

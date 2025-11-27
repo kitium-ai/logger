@@ -60,13 +60,14 @@ export const getLoggerConfig = (): LoggerConfig => {
 
   const logLevel = (process.env['LOG_LEVEL'] ?? LogLevel.INFO) as LogLevel;
 
+  const defaultService = 'default-service';
   const lokiConfig: LokiConfig = {
     enabled: process.env['LOKI_ENABLED'] !== 'false',
     host: process.env['LOKI_HOST'] ?? 'localhost',
     port: parseInt(process.env['LOKI_PORT'] ?? '3100', 10),
     protocol: (process.env['LOKI_PROTOCOL'] ?? 'http') as 'http' | 'https',
     labels: {
-      service: process.env['SERVICE_NAME'] ?? 'default-service',
+      service: process.env['SERVICE_NAME'] ?? defaultService,
       environment,
       ...parseLokiLabels(process.env['LOKI_LABELS']),
     },

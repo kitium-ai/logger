@@ -156,9 +156,9 @@ export async function safeAsync<T>(
   try {
     return await function_();
   } catch (error) {
-    const error_ = error instanceof Error ? error : new Error(String(error));
-    errorHandler?.(error_);
-    getLogger().error('Error in async operation', { error: error_.message });
+    const errorObject = error instanceof Error ? error : new Error(String(error));
+    errorHandler?.(errorObject);
+    getLogger().error('Error in async operation', { error: errorObject.message });
     return null;
   }
 }

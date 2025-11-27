@@ -1,7 +1,7 @@
 import * as winston from 'winston';
 
-import { contextManager } from '../context/async-context';
 import type { LoggerConfig } from '../config/logger.config';
+import { contextManager } from '../context/async-context';
 
 export type CoreLogSchema = {
   timestamp: string;

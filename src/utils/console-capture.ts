@@ -3,8 +3,8 @@
  * Framework-agnostic console interception for testing and debugging
  */
 
-import { contextManager, getLogger, sanitizeData } from '../index';
 import type { LogContext } from '../context/async-context';
+import { contextManager, getLogger, sanitizeData } from '../index';
 
 export interface ConsoleCaptureEntry {
   level: string;

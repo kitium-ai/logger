@@ -98,6 +98,30 @@ export default [
       complexity: 'off',
       'security/detect-unsafe-regex': 'off',
       'security/detect-object-injection': 'off',
+      // Disable conflicting import rules - use simple-import-sort instead
+      'import/order': 'off',
+      // Allow common abbreviations in Express middleware
+      'unicorn/prevent-abbreviations': [
+        'warn',
+        {
+          allowList: {
+            res: true,
+            req: true,
+            _res: true,
+            _req: true,
+            e: true,
+            err: true,
+            args: true,
+            props: true,
+          },
+        },
+      ],
+      // Allow default exports for Express apps and examples
+      'import/no-default-export': 'off',
+      // Relax some complexity rules for middleware
+      'max-statements': ['warn', 30],
+      'sonarjs/cognitive-complexity': ['warn', 20],
+      'sonarjs/no-duplicate-string': 'warn',
     },
   },
   {
@@ -111,6 +135,12 @@ export default [
           selector: 'variable',
           modifiers: ['const'],
           format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
+        },
+        {
+          selector: 'variable',
+          format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
+          leadingUnderscore: 'allow',
+          trailingUnderscore: 'allow',
         },
         {
           selector: 'objectLiteralProperty',

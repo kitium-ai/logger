@@ -11,7 +11,6 @@ import {
   LoggerFactory,
   LoggerType,
 } from '../index';
-
 import type { InMemoryLogger } from '../logger/in-memory-logger';
 
 const EXAMPLE_SERVICE_NAME = 'my-app';

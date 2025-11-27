@@ -4,9 +4,9 @@ import { resolve as resolvePath } from 'node:path';
 
 import axios, { type AxiosRequestConfig } from 'axios';
 
-import { loggerMetrics } from './metrics';
 import { getLoggerConfig, type LoggerConfig } from '../config/logger.config';
 import { getLogger } from '../logger/logger';
+import { loggerMetrics } from './metrics';
 
 /**
  * Health check status

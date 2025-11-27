@@ -1,6 +1,6 @@
+import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
 import { getLogger } from '../logger/logger';
-import type { LogContext } from '../context/async-context';
 
 /**
  * Create a performance timer for measuring operation duration
