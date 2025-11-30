@@ -1,6 +1,6 @@
 {
   "name": "@kitiumai/logger",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "sideEffects": false,
   "type": "module",
   "description": "Enterprise-ready centralized logging system with Loki integration",
@@ -15,6 +15,7 @@
     "!dist/**/__tests__/**",
     "!dist/**/examples/**",
     "!dist/**/*.test.*",
+    "types.d.ts",
     "scripts/migrate.cjs",
     "README.md",
     "LICENSE",
@@ -56,6 +57,30 @@
       "import": "./dist/esm/utils/console-capture.js",
       "require": "./dist/cjs/utils/console-capture.js",
       "default": "./dist/esm/utils/console-capture.js"
+    },
+    "./utils/metrics": {
+      "types": "./dist/types/utils/metrics.d.ts",
+      "import": "./dist/esm/utils/metrics.js",
+      "require": "./dist/cjs/utils/metrics.js",
+      "default": "./dist/esm/utils/metrics.js"
+    },
+    "./utils/error-handler": {
+      "types": "./dist/types/utils/error-handler.d.ts",
+      "import": "./dist/esm/utils/error-handler.js",
+      "require": "./dist/cjs/utils/error-handler.js",
+      "default": "./dist/esm/utils/error-handler.js"
+    },
+    "./config": {
+      "types": "./dist/types/config/logger.config.d.ts",
+      "import": "./dist/esm/config/logger.config.js",
+      "require": "./dist/cjs/config/logger.config.js",
+      "default": "./dist/esm/config/logger.config.js"
+    },
+    "./context": {
+      "types": "./dist/types/context/async-context.d.ts",
+      "import": "./dist/esm/context/async-context.js",
+      "require": "./dist/cjs/context/async-context.js",
+      "default": "./dist/esm/context/async-context.js"
     }
   },
   "repository": {
@@ -157,8 +182,8 @@
     "winston-loki": "^6.1.1"
   },
   "devDependencies": {
-    "@kitiumai/config": "^2.0.0",
-    "@kitiumai/lint": "^2.0.0",
+    "@kitiumai/config": "^2.0.1",
+    "@kitiumai/lint": "^2.0.1",
     "@kitiumai/scripts": "^1.0.0",
     "@types/express": "^5.0.3",
     "@types/jest": "^29.5.14",
@@ -180,7 +205,8 @@
       "node-fetch": ">=2.6.7",
       "minimatch": ">=3.0.5",
       "ws": ">=7.5.10",
-      "micromatch": ">=4.0.8"
+      "micromatch": ">=4.0.8",
+      "graphql": "16.12.0"
     }
   }
 }

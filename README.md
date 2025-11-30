@@ -98,6 +98,43 @@ import {
   tracingMiddleware,
   errorLoggingMiddleware,
   performanceMetricsMiddleware,
+```
+
+## Usage & Tree-Shaking
+
+### Subpath Imports (Recommended for Bundle Size)
+
+The logger package provides modular subpath exports to help bundlers tree-shake unused code. Import only what you need:
+
+```typescript
+// ✅ Minimal — only core logger functions
+import { createLogger, getLogger } from '@kitiumai/logger';
+
+// ✅ Middleware only — for Express/Next.js apps
+import { tracingMiddleware, errorLoggingMiddleware } from '@kitiumai/logger/middleware';
+
+// ✅ Utilities only — for timers, metrics, error handling
+import { createTimer, loggerMetrics, retryWithBackoff } from '@kitiumai/logger/utils';
+```
+
+### Top-level Barrel (Works, But Larger)
+
+If you import from the top-level barrel, modern bundlers (esbuild, Rollup, webpack with Terser) will still tree-shake unused exports:
+
+```typescript
+// ⚠️ Works but includes all exports; bundler will tree-shake unused ones
+import { createLogger, tracingMiddleware, createTimer } from '@kitiumai/logger';
+```
+
+### Build Optimization Tips
+
+1. **Use subpath imports in production** to guarantee minimal bundle surface across all bundlers.
+2. **For middleware apps** (Express, Next.js, NestJS), import middleware via `@kitiumai/logger/middleware` to avoid including core logger logic if you only wrap existing loggers.
+3. **For utility libraries**, use `@kitiumai/logger/utils` to ship only the helpers (timers, metrics) without the full logger.
+4. **Verify bundling** with esbuild: `esbuild --bundle --minify --analyze src/index.ts` to see what's included.
+
+The package provides ESM and CommonJS dual builds (`dist/esm/` and `dist/cjs/`) with `sideEffects: false`, so tree-shaking works across all modern toolchains.
+
 } from '@kitiumai/logger';
 
 const app = express();
