@@ -1,4 +1,5 @@
 import type { LogContext } from '../context/async-context';
+import type { AsyncQueueStats } from '../utils/async-logging-queue';
 
 /**
  * Abstract base interface for all logger implementations
@@ -12,6 +13,7 @@ export type ILogger = {
   withContext<T>(context: Partial<LogContext>, function_: () => T | Promise<T>): T | Promise<T>;
   child(metadata: Record<string, unknown>): ILogger;
   close(): Promise<void>;
+  getQueueStats?(): AsyncQueueStats;
 };
 
 /**

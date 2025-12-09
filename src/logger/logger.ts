@@ -6,8 +6,11 @@ import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
 import { applySchemaContract } from '../utils/log-schema';
 import type { ILogger } from './logger.interface';
+import { AsyncLoggingQueue, type LogEntry, type AsyncQueueConfig } from '../utils/async-logging-queue';
+import { TransportHealthMonitor, type HealthMonitorConfig } from '../utils/transport-health-monitor';
+import { EnhancedSecurityManager, type SecurityConfig } from '../utils/enhanced-security';
 
-const TIMESTAMP_FORMAT = TIMESTAMP_FORMAT;
+const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
 const customLevels = {
   levels: {
@@ -31,10 +34,110 @@ export class CentralLogger implements ILogger {
   private readonly config: LoggerConfig;
   private lokiFailureCount = 0;
   private lokiCircuitOpen = false;
+  private asyncQueue: AsyncLoggingQueue;
+  private healthMonitor: TransportHealthMonitor;
+  private securityManager: EnhancedSecurityManager;
 
   constructor(config: LoggerConfig, existingLogger?: winston.Logger) {
     this.config = config;
     this.logger = existingLogger ?? this.createLogger();
+
+    // Initialize async logging queue
+    const queueConfig: AsyncQueueConfig = {
+      maxQueueSize: parseInt(process.env['LOG_QUEUE_SIZE'] ?? '10000'),
+      flushInterval: parseInt(process.env['LOG_FLUSH_INTERVAL'] ?? '5000'),
+      maxRetries: parseInt(process.env['LOG_MAX_RETRIES'] ?? '3'),
+      retryDelay: parseInt(process.env['LOG_RETRY_DELAY'] ?? '1000'),
+      enablePersistence: process.env['LOG_ENABLE_PERSISTENCE'] === 'true',
+      persistencePath: process.env['LOG_PERSISTENCE_PATH'] ?? './logs/queue',
+    };
+
+    this.asyncQueue = new AsyncLoggingQueue(queueConfig, this.processLogBatch.bind(this));
+
+    // Initialize transport health monitor
+    const healthConfig: HealthMonitorConfig = {
+      healthCheckInterval: parseInt(process.env['LOG_HEALTH_CHECK_INTERVAL'] ?? '30000'),
+      failureThreshold: parseInt(process.env['LOG_FAILURE_THRESHOLD'] ?? '5'),
+      recoveryThreshold: parseInt(process.env['LOG_RECOVERY_THRESHOLD'] ?? '2'),
+      circuitBreakerTimeout: parseInt(process.env['LOG_CIRCUIT_BREAKER_TIMEOUT'] ?? '60000'),
+      enableAutoFailover: process.env['LOG_ENABLE_AUTO_FAILOVER'] !== 'false',
+    };
+
+    this.healthMonitor = new TransportHealthMonitor(healthConfig);
+    this.setupTransportHealthMonitoring();
+
+    // Initialize enhanced security manager
+    const securityConfig: SecurityConfig = {
+      enablePIIDetection: process.env['LOG_ENABLE_PII_DETECTION'] !== 'false',
+      enableEncryption: process.env['LOG_ENABLE_ENCRYPTION'] === 'true',
+      enableAuditSigning: process.env['LOG_ENABLE_AUDIT_SIGNING'] === 'true',
+      piiFields: (process.env['LOG_PII_FIELDS'] ?? 'password,token,secret,email,phone,ssn').split(','),
+      ...(process.env['LOG_ENCRYPTION_KEY'] && { encryptionKey: process.env['LOG_ENCRYPTION_KEY'] }),
+      ...(process.env['LOG_AUDIT_KEY'] && { auditKey: process.env['LOG_AUDIT_KEY'] }),
+    };
+
+    this.securityManager = new EnhancedSecurityManager(securityConfig);
+  }
+
+  /**
+   * Setup transport health monitoring endpoints
+   */
+  private setupTransportHealthMonitoring(): void {
+    // Register console transport (always healthy)
+    this.healthMonitor.registerTransport({
+      name: 'console',
+      url: 'console://stdout',
+      healthCheck: async () => true,
+      send: async (data) => {
+        // Console transport is handled by Winston
+        this.logger.info('Health check data', data as any);
+      },
+    }, true); // Primary transport
+
+    // Register file transport if enabled
+    if (this.config.enableFileTransport) {
+      this.healthMonitor.registerTransport({
+        name: 'file',
+        url: `file://${this.config.fileLogPath}`,
+        healthCheck: async () => {
+          // Check if we can write to the log directory
+          const fs = await import('fs/promises');
+          try {
+            await fs.access(this.config.fileLogPath);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        send: async (data) => {
+          // File transport is handled by Winston
+          this.logger.info('File transport data', data as any);
+        },
+      });
+    }
+
+    // Register Loki transport if enabled
+    if (this.config.loki.enabled) {
+      this.healthMonitor.registerTransport({
+        name: 'loki',
+        url: `${this.config.loki.protocol}://${this.config.loki.host}:${this.config.loki.port}`,
+        healthCheck: async () => {
+          try {
+            const axios = (await import('axios')).default;
+            const response = await axios.get(`${this.config.loki.protocol}://${this.config.loki.host}:${this.config.loki.port}/ready`, {
+              timeout: 5000,
+            });
+            return response.status === 200;
+          } catch {
+            return false;
+          }
+        },
+        send: async (data) => {
+          // Loki transport is handled by Winston
+          this.logger.info('Loki transport data', data as any);
+        },
+      });
+    }
   }
 
   /* eslint-disable max-lines-per-function */
@@ -269,31 +372,131 @@ export class CentralLogger implements ILogger {
   }
 
   error(message: string, meta?: unknown, error?: Error): void {
-    const errorInfo: Record<string, unknown> = { message };
-    if (error) {
-      errorInfo['error'] = error;
-      errorInfo['stack'] = error.stack;
-    }
-    if (meta) {
-      errorInfo['meta'] = meta;
-    }
-    this.logger.error(errorInfo);
+    const logEntry: LogEntry = {
+      level: 'error',
+      message,
+      ...(meta !== undefined && { meta }),
+      ...(error && { error }),
+      timestamp: Date.now(),
+      contextId: contextManager.getContext().traceId,
+    };
+    const securedEntry = this.secureLogEntry(logEntry);
+    this.asyncQueue.enqueue(securedEntry);
   }
 
   warn(message: string, meta?: unknown): void {
-    this.logger.warn({ message, meta });
+    const logEntry: LogEntry = {
+      level: 'warn',
+      message,
+      ...(meta !== undefined && { meta }),
+      timestamp: Date.now(),
+      contextId: contextManager.getContext().traceId,
+    };
+    const securedEntry = this.secureLogEntry(logEntry);
+    this.asyncQueue.enqueue(securedEntry);
   }
 
   info(message: string, meta?: unknown): void {
-    this.logger.info({ message, meta });
+    const logEntry: LogEntry = {
+      level: 'info',
+      message,
+      ...(meta !== undefined && { meta }),
+      timestamp: Date.now(),
+      contextId: contextManager.getContext().traceId,
+    };
+    const securedEntry = this.secureLogEntry(logEntry);
+    this.asyncQueue.enqueue(securedEntry);
   }
 
   http(message: string, meta?: unknown): void {
-    this.logger.log('http', { message, meta });
+    const logEntry: LogEntry = {
+      level: 'http',
+      message,
+      ...(meta !== undefined && { meta }),
+      timestamp: Date.now(),
+      contextId: contextManager.getContext().traceId,
+    };
+    const securedEntry = this.secureLogEntry(logEntry);
+    this.asyncQueue.enqueue(securedEntry);
   }
 
   debug(message: string, meta?: unknown): void {
-    this.logger.debug({ message, meta });
+    const logEntry: LogEntry = {
+      level: 'debug',
+      message,
+      ...(meta !== undefined && { meta }),
+      timestamp: Date.now(),
+      contextId: contextManager.getContext().traceId,
+    };
+    const securedEntry = this.secureLogEntry(logEntry);
+    this.asyncQueue.enqueue(securedEntry);
+  }
+
+  /**
+   * Apply security transformations to log entry
+   */
+  private secureLogEntry(entry: LogEntry): LogEntry {
+    // Sanitize PII and sensitive data
+    const sanitizedMessage = this.securityManager.sanitizeData(entry.message) as string;
+    const sanitizedMeta = entry.meta ? this.securityManager.sanitizeData(entry.meta) : undefined;
+
+    // Encrypt sensitive fields if enabled
+    const encryptedMeta = sanitizedMeta ? this.encryptSensitiveFields(sanitizedMeta) : undefined;
+
+    // Create audit trail if enabled
+    const auditEntry = this.securityManager.createAuditEntry(
+      entry.level,
+      sanitizedMessage,
+      (encryptedMeta as Record<string, unknown>) || {}
+    );
+
+    return {
+      level: entry.level,
+      message: sanitizedMessage,
+      meta: auditEntry.metadata,
+      ...(entry.error && { error: entry.error }),
+      timestamp: entry.timestamp,
+      ...(entry.contextId && { contextId: entry.contextId }),
+      ...(auditEntry.signature && { auditSignature: auditEntry.signature }),
+    };
+  }
+
+  /**
+   * Encrypt sensitive fields in metadata
+   */
+  private encryptSensitiveFields(data: unknown): unknown {
+    if (!this.securityManager['config'].enableEncryption || !this.securityManager['config'].encryptionKey) {
+      return data;
+    }
+
+    const sensitiveFields = this.securityManager['config'].piiFields;
+    return this.deepEncrypt(data, sensitiveFields);
+  }
+
+  /**
+   * Recursively encrypt sensitive fields
+   */
+  private deepEncrypt(obj: unknown, sensitiveFields: string[]): unknown {
+    if (!obj || typeof obj !== 'object') {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.deepEncrypt(item, sensitiveFields));
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+        // Encrypt sensitive field
+        result[key] = this.securityManager['encryptData'](String(value));
+      } else if (typeof value === 'object') {
+        result[key] = this.deepEncrypt(value, sensitiveFields);
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
   }
 
   /**
@@ -313,32 +516,58 @@ export class CentralLogger implements ILogger {
   }
 
   /**
-   * Close logger and flush buffers (important for Loki)
+   * Process a batch of log entries through Winston with health monitoring
+   */
+  private async processLogBatch(entries: LogEntry[]): Promise<void> {
+    // Check if we have a healthy transport
+    const activeTransport = this.healthMonitor.getActiveTransport();
+
+    if (!activeTransport) {
+      throw new Error('No healthy transport available for log processing');
+    }
+
+    // Process entries through Winston (which handles the actual transport)
+    for (const entry of entries) {
+      try {
+        // Use Winston's log method with the appropriate level
+        const metadata = typeof entry.meta === 'object' && entry.meta !== null ? entry.meta : {};
+        (this.logger as any).log(entry.level, entry.message, {
+          ...metadata,
+          error: entry.error,
+          timestamp: entry.timestamp,
+          contextId: entry.contextId,
+          auditSignature: entry.auditSignature,
+        });
+      } catch (error) {
+        // If Winston fails, log to console as fallback and mark transport as unhealthy
+        console.error('Failed to process log entry:', error, entry);
+        this.healthMonitor.checkHealth(activeTransport);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Get async queue statistics
+   */
+  getQueueStats() {
+    return this.asyncQueue.getStats();
+  }
+
+  /**
+   * Get transport health status
+   */
+  getTransportHealth() {
+    return this.healthMonitor.getHealthStatus();
+  }
+
+  /**
+   * Graceful shutdown
    */
   async close(): Promise<void> {
-    return new Promise((resolve) => {
-      // If logger is already closed, resolve immediately
-      if (!this.logger || (this.logger as unknown as { closed?: boolean }).closed) {
-        resolve();
-        return;
-      }
-
-      const timeout = setTimeout(() => {
-        resolve();
-      }, 1000);
-
-      this.logger.once('finish', () => {
-        clearTimeout(timeout);
-        resolve();
-      });
-
-      try {
-        this.logger.end();
-      } catch {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
+    await this.asyncQueue.shutdown();
+    this.healthMonitor.shutdown();
+    this.logger.end();
   }
 }
 
