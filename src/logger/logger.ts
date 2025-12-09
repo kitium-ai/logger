@@ -9,6 +9,7 @@ import type { ILogger } from './logger.interface';
 import { AsyncLoggingQueue, type LogEntry, type AsyncQueueConfig } from '../utils/async-logging-queue';
 import { TransportHealthMonitor, type HealthMonitorConfig } from '../utils/transport-health-monitor';
 import { EnhancedSecurityManager, type SecurityConfig } from '../utils/enhanced-security';
+import { MetricsCollector, type MetricsConfig } from '../utils/metrics-collector';
 
 const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
@@ -37,6 +38,7 @@ export class CentralLogger implements ILogger {
   private asyncQueue: AsyncLoggingQueue;
   private healthMonitor: TransportHealthMonitor;
   private securityManager: EnhancedSecurityManager;
+  private metricsCollector: MetricsCollector;
 
   constructor(config: LoggerConfig, existingLogger?: winston.Logger) {
     this.config = config;
@@ -50,6 +52,11 @@ export class CentralLogger implements ILogger {
       retryDelay: parseInt(process.env['LOG_RETRY_DELAY'] ?? '1000'),
       enablePersistence: process.env['LOG_ENABLE_PERSISTENCE'] === 'true',
       persistencePath: process.env['LOG_PERSISTENCE_PATH'] ?? './logs/queue',
+      enableGuaranteedDelivery: process.env['LOG_ENABLE_GUARANTEED_DELIVERY'] !== 'false',
+      deadLetterQueuePath: process.env['LOG_DEAD_LETTER_PATH'] ?? './logs/dead-letter',
+      maxDeadLetterSize: parseInt(process.env['LOG_MAX_DEAD_LETTER_SIZE'] ?? '1000'),
+      retryBackoffMultiplier: parseFloat(process.env['LOG_RETRY_BACKOFF_MULTIPLIER'] ?? '2'),
+      maxRetryDelay: parseInt(process.env['LOG_MAX_RETRY_DELAY'] ?? '30000'),
     };
 
     this.asyncQueue = new AsyncLoggingQueue(queueConfig, this.processLogBatch.bind(this));
@@ -77,6 +84,21 @@ export class CentralLogger implements ILogger {
     };
 
     this.securityManager = new EnhancedSecurityManager(securityConfig);
+
+    // Initialize metrics collector
+    const metricsConfig: MetricsConfig = {
+      enableMetrics: process.env['LOG_ENABLE_METRICS'] !== 'false',
+      metricsInterval: parseInt(process.env['LOG_METRICS_INTERVAL'] ?? '10000'),
+      retentionPeriod: parseInt(process.env['LOG_METRICS_RETENTION'] ?? '3600000'), // 1 hour
+      alertThresholds: {
+        errorRate: parseFloat(process.env['LOG_ALERT_ERROR_RATE'] ?? '5'),
+        throughputDrop: parseFloat(process.env['LOG_ALERT_THROUGHPUT_DROP'] ?? '20'),
+        queueSize: parseInt(process.env['LOG_ALERT_QUEUE_SIZE'] ?? '5000'),
+        deadLetterGrowth: parseInt(process.env['LOG_ALERT_DEAD_LETTER_GROWTH'] ?? '10'),
+      },
+    };
+
+    this.metricsCollector = new MetricsCollector(metricsConfig, () => this.asyncQueue.getStats());
   }
 
   /**
@@ -562,11 +584,54 @@ export class CentralLogger implements ILogger {
   }
 
   /**
+   * Get dead letter queue contents
+   */
+  getDeadLetterQueue() {
+    return this.asyncQueue.getDeadLetterQueue();
+  }
+
+  /**
+   * Clear dead letter queue
+   */
+  clearDeadLetterQueue() {
+    this.asyncQueue.clearDeadLetterQueue();
+  }
+
+  /**
+   * Re-queue entries from dead letter queue
+   */
+  requeueFromDeadLetter(count: number = 1) {
+    return this.asyncQueue.requeueFromDeadLetter(count);
+  }
+
+  /**
+   * Get metrics summary
+   */
+  getMetricsSummary() {
+    return this.metricsCollector.getMetricsSummary();
+  }
+
+  /**
+   * Get metrics for a time range
+   */
+  getMetricsRange(startTime: number, endTime: number) {
+    return this.metricsCollector.getMetricsRange(startTime, endTime);
+  }
+
+  /**
+   * Export all metrics data
+   */
+  exportMetrics() {
+    return this.metricsCollector.exportMetrics();
+  }
+
+  /**
    * Graceful shutdown
    */
   async close(): Promise<void> {
     await this.asyncQueue.shutdown();
     this.healthMonitor.shutdown();
+    this.metricsCollector.shutdown();
     this.logger.end();
   }
 }

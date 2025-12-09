@@ -85,14 +85,20 @@ export class InMemoryLogger implements ILogger {
    * Get logs for a specific trace
    */
   getLogsByTraceId(traceId: string): LogEntry[] {
-    return this.logs.filter((log) => log.context?.traceId === traceId);
+    return this.logs.filter((log) => log.contextId === traceId);
   }
 
   /**
    * Get logs for a specific user
    */
   getLogsByUserId(userId: string): LogEntry[] {
-    return this.logs.filter((log) => log.context?.userId === userId);
+    return this.logs.filter((log) => {
+      if (typeof log.meta === 'object' && log.meta !== null) {
+        const meta = log.meta as Record<string, unknown>;
+        return meta['userId'] === userId;
+      }
+      return false;
+    });
   }
 
   /**
@@ -130,11 +136,11 @@ export class InMemoryLogger implements ILogger {
       serviceName: this.serviceName,
     };
     if (this.logs[0]?.timestamp) {
-      result.oldestLog = this.logs[0].timestamp;
+      result.oldestLog = new Date(this.logs[0].timestamp).toISOString();
     }
     const lastLog = this.logs[this.logs.length - 1];
     if (lastLog?.timestamp) {
-      result.newestLog = lastLog.timestamp;
+      result.newestLog = new Date(lastLog.timestamp).toISOString();
     }
     return result;
   }
@@ -166,27 +172,15 @@ export class InMemoryLogger implements ILogger {
           }
         : { serviceName: this.serviceName };
     const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
       level,
       message,
-      service: this.serviceName,
-      environment: 'in-memory',
-      metadata: enrichedMeta,
-      context: {
-        traceId: context.traceId,
-        ...(context.spanId !== undefined && { spanId: context.spanId }),
-        ...(context.userId !== undefined && { userId: context.userId }),
-        ...(context.requestId !== undefined && { requestId: context.requestId }),
-        ...(context.sessionId !== undefined && { sessionId: context.sessionId }),
-        ...(context.correlationId !== undefined && { correlationId: context.correlationId }),
-      },
+      meta: enrichedMeta,
+      contextId: context.traceId,
     };
 
     if (error) {
-      entry.error = {
-        message: error.message,
-        ...(error.stack !== undefined && { stack: error.stack }),
-      };
+      entry.error = error;
     }
 
     this.logs.push(entry);

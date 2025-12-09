@@ -1,5 +1,9 @@
 import type { LogContext } from '../context/async-context';
-import type { AsyncQueueStats } from '../utils/async-logging-queue';
+import type { AsyncQueueStats, LogEntry } from '../utils/async-logging-queue';
+import type { PerformanceMetrics, AlertCondition } from '../utils/metrics-collector';
+
+// Re-export LogEntry for backward compatibility
+export type { LogEntry } from '../utils/async-logging-queue';
 
 /**
  * Abstract base interface for all logger implementations
@@ -14,29 +18,15 @@ export type ILogger = {
   child(metadata: Record<string, unknown>): ILogger;
   close(): Promise<void>;
   getQueueStats?(): AsyncQueueStats;
-};
-
-/**
- * Log entry structure for storage
- */
-export type LogEntry = {
-  timestamp: string;
-  level: string;
-  message: string;
-  service: string;
-  environment: string;
-  metadata?: unknown;
-  error?: {
-    message: string;
-    stack?: string;
+  getDeadLetterQueue?(): LogEntry[];
+  clearDeadLetterQueue?(): void;
+  requeueFromDeadLetter?(count?: number): LogEntry[];
+  getMetricsSummary?(): {
+    current: PerformanceMetrics | null;
+    averages: Partial<PerformanceMetrics>;
+    alerts: AlertCondition[];
+    trends: any;
   };
-  context?: {
-    traceId: string;
-    spanId?: string;
-    userId?: string;
-    requestId?: string;
-    sessionId?: string;
-    correlationId?: string;
-    metadata?: Record<string, unknown>;
-  };
+  getMetricsRange?(startTime: number, endTime: number): PerformanceMetrics[];
+  exportMetrics?(): { metrics: PerformanceMetrics[]; alerts: AlertCondition[] };
 };
