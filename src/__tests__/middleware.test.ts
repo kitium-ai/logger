@@ -237,7 +237,7 @@ describe('Express Middleware', () => {
     });
 
     it('should handle extractor returning undefined', (done) => {
-      const extractor = jest.fn().mockReturnValue();
+      const extractor = jest.fn();
       const middleware = userContextMiddleware(extractor);
       mockNext.mockImplementation(() => {
         done();

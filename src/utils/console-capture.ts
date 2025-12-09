@@ -6,7 +6,7 @@
 import type { LogContext } from '../context/async-context';
 import { contextManager, getLogger, sanitizeData } from '../index';
 
-export interface ConsoleCaptureEntry {
+export type ConsoleCaptureEntry = {
   level: string;
   message: string[];
   timestamp: number;
@@ -14,9 +14,9 @@ export interface ConsoleCaptureEntry {
   spanId?: string;
   requestId?: string;
   metadata?: Record<string, unknown>;
-}
+};
 
-export interface ConsoleCapture {
+export type ConsoleCapture = {
   entries: ConsoleCaptureEntry[];
   logs: ConsoleCaptureEntry[];
   errors: ConsoleCaptureEntry[];
@@ -29,9 +29,9 @@ export interface ConsoleCapture {
   getByTraceId(traceId: string): ConsoleCaptureEntry[];
   hasOutput(level?: string): boolean;
   exportToLogger(): void;
-}
+};
 
-export interface ConsoleCaptureOptions {
+export type ConsoleCaptureOptions = {
   /**
    * Whether to automatically send captured logs to @kitiumai/logger
    */
@@ -52,15 +52,15 @@ export interface ConsoleCaptureOptions {
    * Custom logger instance (defaults to getLogger())
    */
   logger?: ReturnType<typeof getLogger>;
-}
+};
 
-interface OriginalConsole {
+type OriginalConsole = {
   log: typeof console.log;
   info: typeof console.info;
   warn: typeof console.warn;
   error: typeof console.error;
   debug: typeof console.debug;
-}
+};
 
 /**
  * Capture console output with context propagation and logger integration

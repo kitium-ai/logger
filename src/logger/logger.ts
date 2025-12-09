@@ -7,6 +7,8 @@ import { contextManager } from '../context/async-context';
 import { applySchemaContract } from '../utils/log-schema';
 import type { ILogger } from './logger.interface';
 
+const TIMESTAMP_FORMAT = TIMESTAMP_FORMAT;
+
 const customLevels = {
   levels: {
     error: 0,
@@ -47,7 +49,7 @@ export class CentralLogger implements ILogger {
 
     // Console transport
     if (this.config.enableConsoleTransport) {
-      const timestampFormat = 'YYYY-MM-DD HH:mm:ss';
+      const timestampFormat = TIMESTAMP_FORMAT;
       transports.push(
         new winston.transports.Console({
           format: winston.format.combine(
@@ -72,7 +74,7 @@ export class CentralLogger implements ILogger {
           maxFiles: this.config.maxFiles,
           format: winston.format.combine(
             samplingFilter(),
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
             winston.format.errors({ stack: true }),
             this.enrichWithContext(),
             this.schemaValidator(),
@@ -88,7 +90,7 @@ export class CentralLogger implements ILogger {
           maxFiles: this.config.maxFiles,
           format: winston.format.combine(
             samplingFilter(),
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
             winston.format.errors({ stack: true }),
             this.enrichWithContext(),
             this.schemaValidator(),
@@ -115,7 +117,7 @@ export class CentralLogger implements ILogger {
           }),
           format: winston.format.combine(
             samplingFilter(),
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+            winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
             winston.format.errors({ stack: true }),
             this.enrichWithContext(),
             this.schemaValidator(),

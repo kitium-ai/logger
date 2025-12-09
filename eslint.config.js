@@ -3,7 +3,7 @@
  * Uses @kitiumai/lint as the base configuration
  */
 
-import { eslintBaseConfig, eslintSecurityConfig } from '@kitiumai/lint';
+import { eslintBaseConfig, eslintTypeScriptConfig, eslintSecurityConfig } from '@kitiumai/lint';
 import typescriptEslintParser from '@typescript-eslint/parser';
 
 export default [
@@ -33,6 +33,7 @@ export default [
     ],
   },
   ...eslintBaseConfig,
+  ...eslintTypeScriptConfig,
   {
     name: 'kitium/logger-typescript',
     files: ['**/*.ts', '**/*.tsx'],

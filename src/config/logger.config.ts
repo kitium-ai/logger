@@ -2,6 +2,8 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+const DEFAULT_SERVICE_NAME = 'default-service';
+
 export enum LogLevel {
   ERROR = 'error',
   WARN = 'warn',
@@ -60,7 +62,7 @@ export const getLoggerConfig = (): LoggerConfig => {
 
   const logLevel = (process.env['LOG_LEVEL'] ?? LogLevel.INFO) as LogLevel;
 
-  const defaultService = 'default-service';
+  const defaultService = DEFAULT_SERVICE_NAME;
   const lokiConfig: LokiConfig = {
     enabled: process.env['LOKI_ENABLED'] !== 'false',
     host: process.env['LOKI_HOST'] ?? 'localhost',
@@ -90,7 +92,7 @@ export const getLoggerConfig = (): LoggerConfig => {
   };
 
   return {
-    serviceName: process.env['SERVICE_NAME'] ?? 'default-service',
+    serviceName: process.env['SERVICE_NAME'] ?? DEFAULT_SERVICE_NAME,
     environment,
     logLevel,
     loki: lokiConfig,
@@ -111,7 +113,7 @@ export function getPresetConfig(
   overrides: Partial<LoggerConfig> = {}
 ): LoggerConfig {
   const base: LoggerConfig = {
-    serviceName: process.env['SERVICE_NAME'] ?? 'default-service',
+    serviceName: process.env['SERVICE_NAME'] ?? DEFAULT_SERVICE_NAME,
     environment: preset,
     logLevel: preset === 'development' ? LogLevel.DEBUG : LogLevel.INFO,
     loki: {
@@ -120,7 +122,7 @@ export function getPresetConfig(
       port: parseInt(process.env['LOKI_PORT'] ?? '3100', 10),
       protocol: (process.env['LOKI_PROTOCOL'] ?? 'http') as 'http' | 'https',
       labels: {
-        service: process.env['SERVICE_NAME'] ?? 'default-service',
+        service: process.env['SERVICE_NAME'] ?? DEFAULT_SERVICE_NAME,
         environment: preset,
       },
       batchSize: preset === 'production' ? 500 : 100,
