@@ -48,16 +48,20 @@ describe('Express Middleware', () => {
     mockRequest = {
       method: HTTP_METHOD_GET,
       path: '/api/users',
+      /* eslint-disable @typescript-eslint/naming-convention */
       headers: {
         'x-user-id': 'user-123',
         'x-request-id': 'req-456',
       },
+      /* eslint-enable @typescript-eslint/naming-convention */
       body: { name: 'John', password: 'secret123' },
       get: jest.fn((header: string): string | string[] | undefined => {
+        /* eslint-disable @typescript-eslint/naming-convention */
         const headersMap: Record<string, string> = {
           'x-user-id': 'user-123',
           'x-request-id': 'req-456',
         };
+        /* eslint-enable @typescript-eslint/naming-convention */
         return headersMap[header.toLowerCase()];
       }) as unknown as Request['get'],
     };
@@ -168,7 +172,7 @@ describe('Express Middleware', () => {
 
     it('should have 4 parameters for error handling', () => {
       const middleware = errorLoggingMiddleware();
-      expect(middleware.length).toBe(4);
+      expect(middleware).toHaveLength(4);
     });
   });
 
@@ -209,7 +213,7 @@ describe('Express Middleware', () => {
 
   describe('userContextMiddleware', () => {
     it('should create middleware function with extractor', () => {
-      const extractor = (request: Request) => request.headers['x-user-id'] as string;
+      const extractor = (request: Request): string => request.headers['x-user-id'] as string;
       const middleware = userContextMiddleware(extractor);
       expect(typeof middleware).toBe(TYPE_FUNCTION);
     });
@@ -247,7 +251,8 @@ describe('Express Middleware', () => {
     });
 
     it('should handle request with user ID header', (done) => {
-      const userExtractor = (request: Request) => request.get('x-user-id');
+      const userExtractor = (request: Request): string | string[] | undefined =>
+        request.get('x-user-id');
 
       const middleware = userContextMiddleware(userExtractor);
       mockNext.mockImplementation(() => {
@@ -260,9 +265,13 @@ describe('Express Middleware', () => {
 
   describe('middleware ordering and integration', () => {
     it('should chain multiple middleware', (done) => {
-      const middleware1 = jest.fn((_request, _res, next) => next());
-      const middleware2 = jest.fn((_request, _res, next) => next());
-      const middleware3 = jest.fn(() => {
+      const middleware1 = jest.fn((_request: Request, _res: Response, next: NextFunction): void =>
+        next()
+      );
+      const middleware2 = jest.fn((_request: Request, _res: Response, next: NextFunction): void =>
+        next()
+      );
+      const middleware3 = jest.fn((): void => {
         done();
       });
 

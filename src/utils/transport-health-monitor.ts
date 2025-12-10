@@ -3,9 +3,9 @@
  * Monitors transport health and provides automatic failover capabilities
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
-export interface TransportHealthStatus {
+export type TransportHealthStatus = {
   transport: string;
   healthy: boolean;
   lastSuccess: number;
@@ -14,31 +14,31 @@ export interface TransportHealthStatus {
   avgResponseTime: number;
   consecutiveFailures: number;
   circuitBreakerState: 'closed' | 'open' | 'half-open';
-}
+};
 
-export interface HealthMonitorConfig {
+export type HealthMonitorConfig = {
   healthCheckInterval: number;
   failureThreshold: number;
   recoveryThreshold: number;
   circuitBreakerTimeout: number;
   enableAutoFailover: boolean;
-}
+};
 
-export interface TransportEndpoint {
+export type TransportEndpoint = {
   name: string;
   url: string;
   healthCheck: () => Promise<boolean>;
   send: (data: unknown) => Promise<void>;
-}
+};
 
 export class TransportHealthMonitor extends EventEmitter {
-  private transports = new Map<string, TransportEndpoint>();
-  private healthStatus = new Map<string, TransportHealthStatus>();
+  private readonly transports = new Map<string, TransportEndpoint>();
+  private readonly healthStatus = new Map<string, TransportHealthStatus>();
   private healthCheckTimer?: NodeJS.Timeout;
   private primaryTransport?: string;
   private failoverTransport?: string;
 
-  constructor(private config: HealthMonitorConfig) {
+  constructor(private readonly config: HealthMonitorConfig) {
     super();
     this.setupHealthChecks();
   }
@@ -150,7 +150,6 @@ export class TransportHealthMonitor extends EventEmitter {
         status.healthy = true;
         this.emit('transport-recovered', activeTransport);
       }
-
     } catch (error) {
       // Update failure metrics
       status.lastFailure = Date.now();
@@ -182,7 +181,11 @@ export class TransportHealthMonitor extends EventEmitter {
     try {
       const isHealthy = await transport.healthCheck();
 
-      if (isHealthy && !status.healthy && status.consecutiveFailures >= this.config.recoveryThreshold) {
+      if (
+        isHealthy &&
+        !status.healthy &&
+        status.consecutiveFailures >= this.config.recoveryThreshold
+      ) {
         // Recovery logic
         status.healthy = true;
         status.consecutiveFailures = 0;
@@ -221,10 +224,12 @@ export class TransportHealthMonitor extends EventEmitter {
   }
 
   private setupHealthChecks(): void {
-    this.healthCheckTimer = setInterval(async () => {
-      for (const transportName of this.transports.keys()) {
-        await this.checkHealth(transportName);
-      }
+    this.healthCheckTimer = setInterval(() => {
+      void (async (): Promise<void> => {
+        for (const transportName of this.transports.keys()) {
+          await this.checkHealth(transportName);
+        }
+      })();
     }, this.config.healthCheckInterval);
   }
 }

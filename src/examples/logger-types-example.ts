@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Examples demonstrating different logger types
  */
@@ -20,7 +19,7 @@ const APP_STARTED_MSG = 'Application started';
 /**
  * Example 1: Console Logger - Simple development logging
  */
-export function exampleConsoleLogger() {
+export function exampleConsoleLogger(): void {
   console.log('\n=== Console Logger Example ===');
 
   // Using builder pattern
@@ -37,7 +36,7 @@ export function exampleConsoleLogger() {
 /**
  * Example 2: In-Memory Logger - Testing and debugging
  */
-export function exampleInMemoryLogger() {
+export function exampleInMemoryLogger(): void {
   console.log('\n=== In-Memory Logger Example ===');
 
   // Using builder pattern
@@ -67,7 +66,7 @@ export function exampleInMemoryLogger() {
 /**
  * Example 3: File Logger - Production logging
  */
-export function exampleFileLogger() {
+export function exampleFileLogger(): void {
   console.log('\n=== File Logger Example ===');
 
   const logger = new LoggerBuilder()
@@ -92,7 +91,7 @@ export function exampleFileLogger() {
 /**
  * Example 4: Central Logger - Cloud-native with Loki
  */
-export async function exampleCentralLogger() {
+export async function exampleCentralLogger(): Promise<void> {
   console.log('\n=== Central Logger Example ===');
 
   const config = getLoggerConfig();
@@ -127,7 +126,7 @@ export async function exampleCentralLogger() {
 /**
  * Example 5: Using LoggerFactory
  */
-export function exampleLoggerFactory() {
+export function exampleLoggerFactory(): void {
   console.log('\n=== LoggerFactory Example ===');
 
   // Create console logger
@@ -151,7 +150,7 @@ export function exampleLoggerFactory() {
 /**
  * Example 6: Global Logger with Auto-initialization
  */
-export function exampleGlobalLogger() {
+export function exampleGlobalLogger(): void {
   console.log('\n=== Global Logger Example ===');
 
   // Initialize global logger
@@ -168,7 +167,7 @@ export function exampleGlobalLogger() {
 /**
  * Example 7: Logger with Context
  */
-export async function exampleLoggerWithContext() {
+export async function exampleLoggerWithContext(): Promise<void> {
   console.log('\n=== Logger with Context Example ===');
 
   const logger = LoggerBuilder.console('context-app');
@@ -193,7 +192,7 @@ export async function exampleLoggerWithContext() {
 /**
  * Example 8: Switching Logger Types Dynamically
  */
-export function exampleDynamicLoggerType() {
+export function exampleDynamicLoggerType(): void {
   console.log('\n=== Dynamic Logger Type Example ===');
 
   const loggerType = process.env['LOGGER_TYPE'] ?? 'console';
@@ -211,7 +210,7 @@ export function exampleDynamicLoggerType() {
 /**
  * Example 9: Development vs Production Setup
  */
-export function exampleEnvironmentSetup() {
+export function exampleEnvironmentSetup(): void {
   console.log('\n=== Environment-based Setup Example ===');
 
   const isDevelopment = process.env['NODE_ENV'] === 'development';
@@ -245,7 +244,7 @@ export function exampleEnvironmentSetup() {
 /**
  * Example 10: Custom Configuration per Logger Type
  */
-export function exampleCustomConfiguration() {
+export function exampleCustomConfiguration(): void {
   console.log('\n=== Custom Configuration Example ===');
 
   // Console logger with custom settings
@@ -283,7 +282,7 @@ export function exampleCustomConfiguration() {
 /**
  * Run all examples
  */
-export async function runAllExamples() {
+export async function runAllExamples(): Promise<void> {
   try {
     exampleConsoleLogger();
     exampleInMemoryLogger();

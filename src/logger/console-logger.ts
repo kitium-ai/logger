@@ -1,5 +1,4 @@
-import type { LogContext } from '../context/async-context';
-import { contextManager } from '../context/async-context';
+import { contextManager, type LogContext } from '../context/async-context';
 import type { ILogger } from './logger.interface';
 
 /**
@@ -89,21 +88,30 @@ export class ConsoleLogger implements ILogger {
     // Add context info if available
     if (context.userId || context.requestId) {
       const contextInfo = [];
-      if (context.userId) contextInfo.push(`userId: ${context.userId}`);
-      if (context.requestId) contextInfo.push(`requestId: ${context.requestId.substring(0, 8)}`);
-      if (context.sessionId) contextInfo.push(`sessionId: ${context.sessionId.substring(0, 8)}`);
+      if (context.userId) {
+        contextInfo.push(`userId: ${context.userId}`);
+      }
+      if (context.requestId) {
+        contextInfo.push(`requestId: ${context.requestId.substring(0, 8)}`);
+      }
+      if (context.sessionId) {
+        contextInfo.push(`sessionId: ${context.sessionId.substring(0, 8)}`);
+      }
       output += `\n  Context: ${contextInfo.join(', ')}`;
     }
 
     // Write to appropriate stream
-    // eslint-disable-next-line no-console
+
     const stream = level === 'ERROR' ? console.error : console.log;
     stream(output);
   }
 
   private getColorCode(level: string): string {
-    if (!this.colors) return '';
+    if (!this.colors) {
+      return '';
+    }
 
+    /* eslint-disable @typescript-eslint/naming-convention */
     const colors: Record<string, string> = {
       ERROR: '\x1b[31m', // Red
       WARN: '\x1b[33m', // Yellow
@@ -111,6 +119,7 @@ export class ConsoleLogger implements ILogger {
       HTTP: '\x1b[36m', // Cyan
       DEBUG: '\x1b[90m', // Gray
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     // eslint-disable-next-line security/detect-object-injection
     return colors[level] ?? '';

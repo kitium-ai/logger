@@ -1,6 +1,5 @@
 import { getLogger } from '../logger/logger';
-import type { LoggerConfig } from './logger.config';
-import { LogLevel } from './logger.config';
+import { type LoggerConfig, LogLevel } from './logger.config';
 
 /**
  * Configuration validation errors
@@ -189,11 +188,13 @@ export function parseFileSize(size: string): number {
   }
   const number = parseFloat(numberString);
 
+  /* eslint-disable @typescript-eslint/naming-convention */
   const multipliers: Record<string, number> = {
     K: 1024,
     M: 1024 * 1024,
     G: 1024 * 1024 * 1024,
   };
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   const multiplier = multipliers[unit?.toUpperCase() ?? ''] ?? 1;
   return Math.floor(number * multiplier);

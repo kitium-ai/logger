@@ -106,7 +106,7 @@ describe('Logger Utils', () => {
     it('should include metadata', () => {
       const metadata = { userId: '123', action: 'login' };
       const error = new LoggableError('Login failed', 'LOGIN_FAILED', metadata);
-      expect(error.metadata).toEqual(metadata);
+      expect(error.metadata).toStrictEqual(metadata);
     });
 
     it('should have log method', () => {
@@ -119,7 +119,7 @@ describe('Logger Utils', () => {
 
     it('should handle empty metadata', () => {
       const error = new LoggableError(TEST_ERROR, TEST_ERROR_CODE, {});
-      expect(error.metadata).toEqual({});
+      expect(error.metadata).toStrictEqual({});
     });
 
     it('should support logging with different levels', () => {
@@ -195,20 +195,20 @@ describe('Logger Utils', () => {
 
   describe('logFunctionCall', () => {
     it('should wrap function for logging', () => {
-      const testFunction = (a: number, b: number) => a + b;
+      const testFunction = (a: number, b: number): number => a + b;
       const wrapped = logFunctionCall(testFunction, 'add');
       expect(typeof wrapped).toBe(TYPE_FUNCTION);
     });
 
     it('should execute wrapped function', () => {
-      const testFunction = (a: number, b: number) => a + b;
+      const testFunction = (a: number, b: number): number => a + b;
       const wrapped = logFunctionCall(testFunction, 'add');
       const result = wrapped(2, 3);
       expect(result).toBe(5);
     });
 
     it('should handle function errors', () => {
-      const testFunction = () => {
+      const testFunction = (): never => {
         throw new Error('Test error');
       };
       const wrapped = logFunctionCall(testFunction, 'errorFn');

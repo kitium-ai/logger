@@ -1,5 +1,4 @@
-import type { Request, Response } from 'express';
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 
 import {
   addMetadata,
@@ -171,7 +170,7 @@ app.use((request: Request, res: Response) => {
 app.use(errorLoggingMiddleware());
 
 // Graceful shutdown
-async function shutdown() {
+async function shutdown(): Promise<void> {
   getLogger().info('Server shutting down gracefully...');
 
   await new Promise<void>((resolve) => {

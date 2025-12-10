@@ -1,16 +1,9 @@
 import type { EventEmitter } from 'node:events';
 
-import type { LogContext } from '../context/async-context';
 import { contextManager } from '../context/async-context';
+import { TraceContextExtractor } from '../context/trace-context-extractor';
 import { getLogger } from '../logger/logger';
 import { addMetadata } from './express-middleware';
-
-const HEADER_TRACE_ID = 'x-trace-id';
-const HEADER_SPAN_ID = 'x-span-id';
-const HEADER_REQUEST_ID = 'x-request-id';
-const HEADER_USER_ID = 'x-user-id';
-const HEADER_SESSION_ID = 'x-session-id';
-const HEADER_CORRELATION_ID = 'x-correlation-id';
 
 type NestHttpContextLike = {
   getRequest: () => {
@@ -35,25 +28,12 @@ export class NestLoggerMiddleware {
     request: { headers?: Record<string, string>; method?: string; url?: string; ip?: string },
     res: EventEmitter & { statusCode?: number },
     next: NextFunction
-  ) {
-    const partialContext: Partial<LogContext> = {};
+  ): void {
     const headers = request.headers ?? {};
 
-    const traceId = headers[HEADER_TRACE_ID];
-    const spanId = headers[HEADER_SPAN_ID];
-    const requestId = headers[HEADER_REQUEST_ID];
-    const userId = headers[HEADER_USER_ID];
-    const sessionId = headers[HEADER_SESSION_ID];
-    const correlationId = headers[HEADER_CORRELATION_ID];
-
-    if (traceId) partialContext.traceId = traceId;
-    if (spanId) partialContext.spanId = spanId;
-    if (requestId) partialContext.requestId = requestId;
-    if (userId) partialContext.userId = userId;
-    if (sessionId) partialContext.sessionId = sessionId;
-    if (correlationId) partialContext.correlationId = correlationId;
-
-    const context = contextManager.initContext(partialContext);
+    // Use centralized trace context extraction
+    const getHeader = (name: string): string | undefined => headers[name];
+    const context = TraceContextExtractor.extractLogContext(getHeader, true);
 
     contextManager.run(context, () => {
       addMetadata('ip', request.ip);
@@ -61,7 +41,7 @@ export class NestLoggerMiddleware {
       addMetadata('path', request.url);
 
       const start = Date.now();
-      const logCompletion = () => {
+      const logCompletion = (): void => {
         getLogger().http('Nest request completed', {
           method: request.method,
           path: request.url,
@@ -77,9 +57,11 @@ export class NestLoggerMiddleware {
   }
 }
 
-export function createNestExceptionFilter() {
+export function createNestExceptionFilter(): {
+  catch: (exception: unknown, host: NestExecutionContextLike) => void;
+} {
   return {
-    catch(exception: unknown, host: NestExecutionContextLike) {
+    catch(exception: unknown, host: NestExecutionContextLike): void {
       const context = host.switchToHttp();
       const response = context.getResponse();
       const request = context.getRequest();

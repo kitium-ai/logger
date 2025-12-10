@@ -149,17 +149,18 @@ app.use(performanceMetricsMiddleware());
 
 // Your routes here
 app.get('/api/data', (req, res) => {
-  getLogger().info('Fetching data');
-  res.json({ data: [] });
+getLogger().info('Fetching data');
+res.json({ data: [] });
 });
 
 // Error handling middleware (must be last)
 app.use(errorLoggingMiddleware());
 
 app.listen(3000, () => {
-  getLogger().info('Server started on port 3000');
+getLogger().info('Server started on port 3000');
 });
-```
+
+````
 
 ### Context bridges (Express, Next.js, OpenTelemetry)
 
@@ -174,7 +175,7 @@ app.use((req, _res, next) => {
 
 // Inside any function running under OpenTelemetry span
 bridgeOpenTelemetryContext();
-```
+````
 
 For framework-agnostic scenarios, use `bridgeHeadersToContext` to hydrate the async context from a raw headers object.
 

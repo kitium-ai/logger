@@ -3,9 +3,10 @@
  * Provides non-blocking log operations with configurable buffers and graceful shutdown
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
-export interface LogEntry {
+export type LogEntry = {
   level: string;
   message: string;
   meta?: unknown;
@@ -16,9 +17,9 @@ export interface LogEntry {
   retryCount?: number;
   nextRetryTime?: number;
   id?: string;
-}
+};
 
-export interface AsyncQueueConfig {
+export type AsyncQueueConfig = {
   maxQueueSize: number;
   flushInterval: number;
   maxRetries: number;
@@ -30,9 +31,9 @@ export interface AsyncQueueConfig {
   maxDeadLetterSize: number;
   retryBackoffMultiplier: number;
   maxRetryDelay: number;
-}
+};
 
-export interface AsyncQueueStats {
+export type AsyncQueueStats = {
   queued: number;
   processed: number;
   failed: number;
@@ -46,7 +47,7 @@ export interface AsyncQueueStats {
   avgRetryDelay: number;
   throughputPerSecond: number;
   errorRate: number;
-}
+};
 
 export class AsyncLoggingQueue extends EventEmitter {
   private queue: LogEntry[] = [];
@@ -57,7 +58,7 @@ export class AsyncLoggingQueue extends EventEmitter {
   private flushTimer?: NodeJS.Timeout;
   private retryTimer?: NodeJS.Timeout;
   private metricsTimer?: NodeJS.Timeout;
-  private stats = {
+  private readonly stats = {
     queued: 0,
     processed: 0,
     failed: 0,
@@ -71,13 +72,13 @@ export class AsyncLoggingQueue extends EventEmitter {
   };
 
   constructor(
-    private config: AsyncQueueConfig,
-    private processor: (entries: LogEntry[]) => Promise<void>
+    private readonly config: AsyncQueueConfig,
+    private readonly processor: (entries: LogEntry[]) => Promise<void>
   ) {
     super();
     this.setupFlushTimer();
     this.setupShutdownHandlers();
-    
+
     if (this.config.enableGuaranteedDelivery) {
       this.setupRetryTimer();
       this.setupMetricsCollection();
@@ -117,7 +118,7 @@ export class AsyncLoggingQueue extends EventEmitter {
 
     // Process immediately if queue is getting full
     if (this.queue.length >= this.config.maxQueueSize * 0.8) {
-      this.processQueue();
+      void this.processQueue();
     }
 
     return true;
@@ -161,15 +162,21 @@ export class AsyncLoggingQueue extends EventEmitter {
   private setupFlushTimer(): void {
     this.flushTimer = setInterval(() => {
       if (this.queue.length > 0) {
-        this.processQueue();
+        void this.processQueue();
       }
     }, this.config.flushInterval);
   }
 
   private setupShutdownHandlers(): void {
-    process.on('SIGTERM', () => this.handleShutdown());
-    process.on('SIGINT', () => this.handleShutdown());
-    process.on('beforeExit', () => this.handleShutdown());
+    process.on('SIGTERM', () => {
+      void this.handleShutdown();
+    });
+    process.on('SIGINT', () => {
+      void this.handleShutdown();
+    });
+    process.on('beforeExit', () => {
+      void this.handleShutdown();
+    });
   }
 
   private async handleShutdown(): Promise<void> {
@@ -227,7 +234,9 @@ export class AsyncLoggingQueue extends EventEmitter {
       await this.processor(entries);
     } catch (error) {
       if (attempt < this.config.maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, this.config.retryDelay * attempt));
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, this.config.retryDelay * attempt);
+        });
         return this.processWithRetry(entries, attempt + 1);
       }
       throw error;
@@ -247,7 +256,7 @@ export class AsyncLoggingQueue extends EventEmitter {
       // Move to retry queue with exponential backoff
       entry.retryCount = retryCount;
       const backoffDelay = Math.min(
-        this.config.retryDelay * Math.pow(this.config.retryBackoffMultiplier, retryCount - 1),
+        this.config.retryDelay * this.config.retryBackoffMultiplier ** (retryCount - 1),
         this.config.maxRetryDelay
       );
       entry.nextRetryTime = Date.now() + backoffDelay;
@@ -263,7 +272,7 @@ export class AsyncLoggingQueue extends EventEmitter {
   private moveToRetryQueue(entry: LogEntry): void {
     entry.retryCount = (entry.retryCount || 0) + 1;
     const backoffDelay = Math.min(
-      this.config.retryDelay * Math.pow(this.config.retryBackoffMultiplier, entry.retryCount - 1),
+      this.config.retryDelay * this.config.retryBackoffMultiplier ** (entry.retryCount - 1),
       this.config.maxRetryDelay
     );
     entry.nextRetryTime = Date.now() + backoffDelay;
@@ -294,7 +303,7 @@ export class AsyncLoggingQueue extends EventEmitter {
     const readyEntries: LogEntry[] = [];
 
     // Find entries ready for retry
-    this.retryQueue = this.retryQueue.filter(entry => {
+    this.retryQueue = this.retryQueue.filter((entry) => {
       if ((entry.nextRetryTime || 0) <= now) {
         readyEntries.push(entry);
         return false;
@@ -315,7 +324,7 @@ export class AsyncLoggingQueue extends EventEmitter {
     }
 
     if (readyEntries.length > 0) {
-      this.processQueue();
+      void this.processQueue();
     }
   }
 
@@ -323,9 +332,12 @@ export class AsyncLoggingQueue extends EventEmitter {
    * Setup retry timer for guaranteed delivery
    */
   private setupRetryTimer(): void {
-    this.retryTimer = setInterval(() => {
-      this.processRetryQueue();
-    }, Math.min(this.config.retryDelay, 1000)); // Check every second or retry delay, whichever is smaller
+    this.retryTimer = setInterval(
+      () => {
+        this.processRetryQueue();
+      },
+      Math.min(this.config.retryDelay, 1000)
+    ); // Check every second or retry delay, whichever is smaller
   }
 
   /**
@@ -375,16 +387,17 @@ export class AsyncLoggingQueue extends EventEmitter {
     try {
       // Load retry queue
       const retryPath = `${this.config.persistencePath}/retry-queue.json`;
-      if (require('fs').existsSync(retryPath)) {
-        const retryData = require('fs').readFileSync(retryPath, 'utf8');
+      if (existsSync(retryPath)) {
+        const retryData = readFileSync(retryPath, 'utf8');
         this.retryQueue = JSON.parse(retryData);
         this.stats.retryQueueSize = this.retryQueue.length;
       }
 
       // Load dead letter queue
-      const dlqPath = this.config.deadLetterQueuePath || `${this.config.persistencePath}/dead-letter-queue.json`;
-      if (require('fs').existsSync(dlqPath)) {
-        const dlqData = require('fs').readFileSync(dlqPath, 'utf8');
+      const dlqPath =
+        this.config.deadLetterQueuePath || `${this.config.persistencePath}/dead-letter-queue.json`;
+      if (existsSync(dlqPath)) {
+        const dlqData = readFileSync(dlqPath, 'utf8');
         this.deadLetterQueue = JSON.parse(dlqData);
         this.stats.deadLetterCount = this.deadLetterQueue.length;
       }
@@ -402,15 +415,16 @@ export class AsyncLoggingQueue extends EventEmitter {
     }
 
     try {
-      require('fs').mkdirSync(this.config.persistencePath, { recursive: true });
+      mkdirSync(this.config.persistencePath, { recursive: true });
 
       // Persist retry queue
       const retryPath = `${this.config.persistencePath}/retry-queue.json`;
-      require('fs').writeFileSync(retryPath, JSON.stringify(this.retryQueue));
+      writeFileSync(retryPath, JSON.stringify(this.retryQueue));
 
       // Persist dead letter queue
-      const dlqPath = this.config.deadLetterQueuePath || `${this.config.persistencePath}/dead-letter-queue.json`;
-      require('fs').writeFileSync(dlqPath, JSON.stringify(this.deadLetterQueue));
+      const dlqPath =
+        this.config.deadLetterQueuePath || `${this.config.persistencePath}/dead-letter-queue.json`;
+      writeFileSync(dlqPath, JSON.stringify(this.deadLetterQueue));
     } catch (error) {
       this.emit('persistence-error', error);
     }
@@ -421,16 +435,21 @@ export class AsyncLoggingQueue extends EventEmitter {
    */
   getStats(): AsyncQueueStats {
     const totalProcessed = this.stats.processed + this.stats.failed;
-    const guaranteedDeliveryRate = totalProcessed > 0 ? (this.stats.processed / totalProcessed) * 100 : 100;
-    const avgProcessingTime = this.stats.processingTimes.length > 0
-      ? this.stats.processingTimes.reduce((a, b) => a + b, 0) / this.stats.processingTimes.length
-      : 0;
-    const avgRetryDelay = this.stats.retryDelays.length > 0
-      ? this.stats.retryDelays.reduce((a, b) => a + b, 0) / this.stats.retryDelays.length
-      : 0;
-    const throughputPerSecond = this.stats.throughputHistory.length > 0
-      ? this.stats.throughputHistory.reduce((a, b) => a + b, 0) / this.stats.throughputHistory.length
-      : 0;
+    const guaranteedDeliveryRate =
+      totalProcessed > 0 ? (this.stats.processed / totalProcessed) * 100 : 100;
+    const avgProcessingTime =
+      this.stats.processingTimes.length > 0
+        ? this.stats.processingTimes.reduce((a, b) => a + b, 0) / this.stats.processingTimes.length
+        : 0;
+    const avgRetryDelay =
+      this.stats.retryDelays.length > 0
+        ? this.stats.retryDelays.reduce((a, b) => a + b, 0) / this.stats.retryDelays.length
+        : 0;
+    const throughputPerSecond =
+      this.stats.throughputHistory.length > 0
+        ? this.stats.throughputHistory.reduce((a, b) => a + b, 0) /
+          this.stats.throughputHistory.length
+        : 0;
     const errorRate = totalProcessed > 0 ? (this.stats.failed / totalProcessed) * 100 : 0;
 
     return {
@@ -469,13 +488,13 @@ export class AsyncLoggingQueue extends EventEmitter {
   /**
    * Re-queue entries from dead letter queue
    */
-  requeueFromDeadLetter(count: number = 1): LogEntry[] {
+  requeueFromDeadLetter(count = 1): LogEntry[] {
     const requeued: LogEntry[] = [];
-    for (let i = 0; i < Math.min(count, this.deadLetterQueue.length); i++) {
+    for (let index = 0; index < Math.min(count, this.deadLetterQueue.length); index++) {
       const entry = this.deadLetterQueue.shift();
       if (entry) {
         entry.retryCount = 0; // Reset retry count
-        entry.nextRetryTime = undefined as any;
+        entry.nextRetryTime = undefined;
         this.queue.push(entry);
         requeued.push(entry);
       }
@@ -483,7 +502,7 @@ export class AsyncLoggingQueue extends EventEmitter {
     this.stats.deadLetterCount = this.deadLetterQueue.length;
     if (requeued.length > 0) {
       this.emit('dead-letter-requeued', requeued);
-      this.processQueue();
+      void this.processQueue();
     }
     return requeued;
   }

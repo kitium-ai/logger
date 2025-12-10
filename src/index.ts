@@ -7,8 +7,18 @@
 export { createLogger } from './logger/create-logger';
 export { CentralLogger, getLogger, initializeLogger } from './logger/logger';
 
-// Logger interface
-export type { ILogger, LogEntry } from './logger/logger.interface';
+// Logger interfaces (segregated by capability for SOLID compliance)
+export type {
+  IAdvancedLogger,
+  IContextualLogger,
+  ICoreLogger,
+  IFullFeaturedLogger,
+  ILogger,
+  IMetricsLogger,
+  IQueueLogger,
+  ISearchableLogger,
+  LogEntry,
+} from './logger/logger.interface';
 
 // Logger implementations
 export { ConsoleLogger } from './logger/console-logger';
@@ -38,6 +48,8 @@ export {
   bridgeNextRequest,
   bridgeOpenTelemetryContext,
 } from './context/context-bridges';
+export type { HeaderGetter, IncomingTraceContext } from './context/trace-context-extractor';
+export { TraceContextExtractor } from './context/trace-context-extractor';
 
 // Middleware exports
 export {
@@ -72,6 +84,18 @@ export {
   withErrorLoggingSync,
   withLoggingContext,
 } from './utils/logger-utils';
+
+// PII detection and sanitization exports
+export {
+  detectPIITypes,
+  isSensitiveField,
+  isSensitiveValue,
+  PIIPatterns,
+  redactValue,
+  sanitizeObject,
+  SENSITIVE_FIELDS,
+  SENSITIVE_VALUE_PATTERNS,
+} from './utils/pii-patterns';
 
 // Console capture exports
 export type {

@@ -1,16 +1,17 @@
-import type { LogContext } from '../context/async-context';
-import { contextManager } from '../context/async-context';
+import { contextManager, type LogContext } from '../context/async-context';
 import { getLogger } from '../logger/logger';
 
 /**
  * Create a performance timer for measuring operation duration
  */
-export function createTimer(label = 'Operation') {
+export function createTimer(label = 'Operation'): {
+  end: (metadata?: Record<string, unknown>) => { duration: number; memoryUsed: number };
+} {
   const startTime = Date.now();
   const startMemory = process.memoryUsage().heapUsed;
 
   return {
-    end: (metadata?: Record<string, unknown>) => {
+    end: (metadata?: Record<string, unknown>): { duration: number; memoryUsed: number } => {
       const duration = Date.now() - startTime;
       const memoryUsed = process.memoryUsage().heapUsed - startMemory;
 

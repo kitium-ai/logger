@@ -5,7 +5,7 @@
 
 import type { LogEntry } from './async-logging-queue';
 
-export interface CorrelationContext {
+export type CorrelationContext = {
   correlationId: string;
   traceId: string;
   spanId: string;
@@ -14,9 +14,9 @@ export interface CorrelationContext {
   operation: string;
   startTime: number;
   tags: Record<string, string>;
-}
+};
 
-export interface LogCorrelation {
+export type LogCorrelation = {
   correlationId: string;
   traceId: string;
   entries: LogEntry[];
@@ -28,52 +28,54 @@ export interface LogCorrelation {
   warningCount: number;
   totalLogs: number;
   duration: number;
-}
+};
 
-export interface LogAnalysis {
+export type LogAnalysis = {
   correlationId: string;
   bottlenecks: BottleneckAnalysis[];
   errorPatterns: ErrorPattern[];
   performanceInsights: PerformanceInsight[];
   recommendations: string[];
-}
+};
 
-export interface BottleneckAnalysis {
+export type BottleneckAnalysis = {
   operation: string;
   service: string;
   avgDuration: number;
   maxDuration: number;
   frequency: number;
   impact: 'high' | 'medium' | 'low';
-}
+};
 
-export interface ErrorPattern {
+export type ErrorPattern = {
   pattern: string;
   frequency: number;
   affectedServices: string[];
   firstSeen: number;
   lastSeen: number;
   severity: 'error' | 'warning';
-}
+};
 
-export interface PerformanceInsight {
+export type PerformanceInsight = {
   type: 'slow_operation' | 'high_error_rate' | 'memory_pressure' | 'queue_backlog';
   description: string;
   severity: 'high' | 'medium' | 'low';
   affectedServices: string[];
   recommendation: string;
-}
+};
 
 export class LogCorrelator {
-  private correlations: Map<string, LogCorrelation> = new Map();
-  private analysisCache: Map<string, LogAnalysis> = new Map();
+  private readonly correlations: Map<string, LogCorrelation> = new Map();
+  private readonly analysisCache: Map<string, LogAnalysis> = new Map();
 
   /**
    * Add a log entry to correlation tracking
    */
   addLogEntry(entry: LogEntry): void {
     const correlationId = this.extractCorrelationId(entry);
-    if (!correlationId) return;
+    if (!correlationId) {
+      return;
+    }
 
     let correlation = this.correlations.get(correlationId);
     if (!correlation) {
@@ -142,7 +144,9 @@ export class LogCorrelator {
    */
   analyzeCorrelation(correlationId: string): LogAnalysis | null {
     const correlation = this.correlations.get(correlationId);
-    if (!correlation) return null;
+    if (!correlation) {
+      return null;
+    }
 
     // Check cache
     if (this.analysisCache.has(correlationId)) {
@@ -166,7 +170,7 @@ export class LogCorrelator {
    */
   findCorrelationsByTimeRange(startTime: number, endTime: number): LogCorrelation[] {
     return Array.from(this.correlations.values()).filter(
-      corr => corr.startTime <= endTime && corr.endTime >= startTime
+      (corr) => corr.startTime <= endTime && corr.endTime >= startTime
     );
   }
 
@@ -174,8 +178,8 @@ export class LogCorrelator {
    * Find correlations involving specific services
    */
   findCorrelationsByService(serviceName: string): LogCorrelation[] {
-    return Array.from(this.correlations.values()).filter(
-      corr => corr.services.includes(serviceName)
+    return Array.from(this.correlations.values()).filter((corr) =>
+      corr.services.includes(serviceName)
     );
   }
 
@@ -197,14 +201,18 @@ export class LogCorrelator {
    */
   private extractCorrelationId(entry: LogEntry): string | null {
     // Try different sources for correlation ID
-    if (entry.contextId) return entry.contextId;
+    if (entry.contextId) {
+      return entry.contextId;
+    }
 
     if (typeof entry.meta === 'object' && entry.meta !== null) {
       const meta = entry.meta as Record<string, unknown>;
-      return (meta['correlationId'] as string) ||
-             (meta['traceId'] as string) ||
-             (meta['requestId'] as string) ||
-             null;
+      return (
+        (meta['correlationId'] as string) ||
+        (meta['traceId'] as string) ||
+        (meta['requestId'] as string) ||
+        null
+      );
     }
 
     return null;
@@ -216,9 +224,7 @@ export class LogCorrelator {
   private extractService(entry: LogEntry): string | null {
     if (typeof entry.meta === 'object' && entry.meta !== null) {
       const meta = entry.meta as Record<string, unknown>;
-      return (meta['serviceName'] as string) ||
-             (meta['service'] as string) ||
-             null;
+      return (meta['serviceName'] as string) || (meta['service'] as string) || null;
     }
     return null;
   }
@@ -229,19 +235,26 @@ export class LogCorrelator {
   private extractOperation(entry: LogEntry): string | null {
     if (typeof entry.meta === 'object' && entry.meta !== null) {
       const meta = entry.meta as Record<string, unknown>;
-      return (meta['operation'] as string) ||
-             (meta['method'] as string) ||
-             (meta['action'] as string) ||
-             null;
+      return (
+        (meta['operation'] as string) ||
+        (meta['method'] as string) ||
+        (meta['action'] as string) ||
+        null
+      );
     }
     return null;
   }
 
   /**
-   * Analyze bottlenecks in the correlation
+   * Build operation statistics from correlation entries
    */
-  private analyzeBottlenecks(correlation: LogCorrelation): BottleneckAnalysis[] {
-    const operationStats: Record<string, { durations: number[]; services: Set<string>; count: number }> = {};
+  private buildOperationStats(
+    correlation: LogCorrelation
+  ): Record<string, { durations: number[]; services: Set<string>; count: number }> {
+    const operationStats: Record<
+      string,
+      { durations: number[]; services: Set<string>; count: number }
+    > = {};
 
     for (const entry of correlation.entries) {
       const operation = this.extractOperation(entry) || 'unknown';
@@ -254,12 +267,32 @@ export class LogCorrelator {
       operationStats[operation].count++;
       operationStats[operation].services.add(service);
 
-      // Estimate duration from log timestamps (simplified)
       if (entry.timestamp) {
         operationStats[operation].durations.push(entry.timestamp);
       }
     }
 
+    return operationStats;
+  }
+
+  /**
+   * Determine impact level based on duration
+   */
+  private getImpactLevel(maxDuration: number): 'high' | 'medium' | 'low' {
+    if (maxDuration > 5000) {
+      return 'high';
+    }
+    if (maxDuration > 1000) {
+      return 'medium';
+    }
+    return 'low';
+  }
+
+  /**
+   * Analyze bottlenecks in the correlation
+   */
+  private analyzeBottlenecks(correlation: LogCorrelation): BottleneckAnalysis[] {
+    const operationStats = this.buildOperationStats(correlation);
     const bottlenecks: BottleneckAnalysis[] = [];
 
     for (const [operation, stats] of Object.entries(operationStats)) {
@@ -267,10 +300,7 @@ export class LogCorrelator {
         const sorted = stats.durations.sort((a, b) => a - b);
         const avgDuration = sorted.reduce((a, b) => a + b, 0) / sorted.length;
         const maxDuration = sorted[sorted.length - 1] ?? 0;
-
-        let impact: 'high' | 'medium' | 'low' = 'low';
-        if (maxDuration > 5000) impact = 'high'; // > 5 seconds
-        else if (maxDuration > 1000) impact = 'medium'; // > 1 second
+        const impact = this.getImpactLevel(maxDuration);
 
         bottlenecks.push({
           operation,
@@ -290,7 +320,10 @@ export class LogCorrelator {
    * Analyze error patterns in the correlation
    */
   private analyzeErrorPatterns(correlation: LogCorrelation): ErrorPattern[] {
-    const errorGroups: Record<string, { count: number; services: Set<string>; timestamps: number[] }> = {};
+    const errorGroups: Record<
+      string,
+      { count: number; services: Set<string>; timestamps: number[] }
+    > = {};
 
     for (const entry of correlation.entries) {
       if (entry.level === 'error' || entry.level === 'warn') {
@@ -335,7 +368,8 @@ export class LogCorrelator {
 
     // Check for high error rate
     const errorRate = correlation.errorCount / correlation.totalLogs;
-    if (errorRate > 0.1) { // > 10% errors
+    if (errorRate > 0.1) {
+      // > 10% errors
       insights.push({
         type: 'high_error_rate',
         description: `High error rate: ${(errorRate * 100).toFixed(1)}%`,
@@ -346,7 +380,8 @@ export class LogCorrelator {
     }
 
     // Check for long duration
-    if (correlation.duration > 30000) { // > 30 seconds
+    if (correlation.duration > 30000) {
+      // > 30 seconds
       insights.push({
         type: 'slow_operation',
         description: `Long-running operation: ${correlation.duration}ms`,
@@ -378,7 +413,9 @@ export class LogCorrelator {
     }
 
     if (correlation.operations.length > 10) {
-      recommendations.push('Review operation complexity and consider breaking down complex workflows');
+      recommendations.push(
+        'Review operation complexity and consider breaking down complex workflows'
+      );
     }
 
     return recommendations;
@@ -391,7 +428,10 @@ export class LogCorrelator {
     // Remove specific values, timestamps, IDs, etc.
     let normalized = message;
     normalized = normalized.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/g, '[TIMESTAMP]');
-    normalized = normalized.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '[UUID]');
+    normalized = normalized.replace(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      '[UUID]'
+    );
     normalized = normalized.replace(/\d+/g, '[NUMBER]');
     normalized = normalized.replace(/https?:\/\/[^\s]+/g, '[URL]');
     return normalized.toLowerCase();

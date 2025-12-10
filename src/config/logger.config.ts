@@ -149,7 +149,9 @@ export function getPresetConfig(
 }
 
 function parseLokiLabels(labelsString?: string): Record<string, string> {
-  if (!labelsString) return {};
+  if (!labelsString) {
+    return {};
+  }
 
   try {
     return JSON.parse(labelsString);

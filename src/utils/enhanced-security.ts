@@ -3,25 +3,27 @@
  * PII detection, classification, and audit log tamper-proofing
  */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
-export interface PIIDetectionResult {
+import { detectPIITypes, PIIPatterns } from './pii-patterns';
+
+export type PIIDetectionResult = {
   hasPII: boolean;
   piiFields: string[];
   classification: 'none' | 'low' | 'medium' | 'high' | 'critical';
   recommendations: string[];
-}
+};
 
-export interface SecurityConfig {
+export type SecurityConfig = {
   enablePIIDetection: boolean;
   enableEncryption: boolean;
   enableAuditSigning: boolean;
   piiFields: string[];
   encryptionKey?: string;
   auditKey?: string;
-}
+};
 
-export interface AuditEntry {
+export type AuditEntry = {
   id: string;
   timestamp: number;
   level: string;
@@ -29,10 +31,10 @@ export interface AuditEntry {
   metadata: Record<string, unknown>;
   signature?: string;
   hash: string;
-}
+};
 
 export class EnhancedSecurityManager {
-  private config: SecurityConfig;
+  private readonly config: SecurityConfig;
 
   constructor(config: SecurityConfig) {
     this.config = config;
@@ -59,11 +61,11 @@ export class EnhancedSecurityManager {
     let classification: PIIDetectionResult['classification'] = 'none';
 
     if (piiFields.length > 0) {
-      if (piiFields.some(field => field.includes('ssn') || field.includes('social'))) {
+      if (piiFields.some((field) => field.includes('ssn') || field.includes('social'))) {
         classification = 'critical';
-      } else if (piiFields.some(field => field.includes('password') || field.includes('token'))) {
+      } else if (piiFields.some((field) => field.includes('password') || field.includes('token'))) {
         classification = 'high';
-      } else if (piiFields.some(field => field.includes('email') || field.includes('phone'))) {
+      } else if (piiFields.some((field) => field.includes('email') || field.includes('phone'))) {
         classification = 'medium';
       } else {
         classification = 'low';
@@ -92,11 +94,7 @@ export class EnhancedSecurityManager {
   /**
    * Create tamper-proof audit entry
    */
-  createAuditEntry(
-    level: string,
-    message: string,
-    metadata: Record<string, unknown>
-  ): AuditEntry {
+  createAuditEntry(level: string, message: string, metadata: Record<string, unknown>): AuditEntry {
     const entry: AuditEntry = {
       id: this.generateId(),
       timestamp: Date.now(),
@@ -107,13 +105,15 @@ export class EnhancedSecurityManager {
     };
 
     // Create content hash
-    entry.hash = this.createHash(JSON.stringify({
-      id: entry.id,
-      timestamp: entry.timestamp,
-      level: entry.level,
-      message: entry.message,
-      metadata: entry.metadata,
-    }));
+    entry.hash = this.createHash(
+      JSON.stringify({
+        id: entry.id,
+        timestamp: entry.timestamp,
+        level: entry.level,
+        message: entry.message,
+        metadata: entry.metadata,
+      })
+    );
 
     // Add cryptographic signature if enabled
     if (this.config.enableAuditSigning && this.config.auditKey) {
@@ -127,13 +127,15 @@ export class EnhancedSecurityManager {
    * Verify audit entry integrity
    */
   verifyAuditEntry(entry: AuditEntry): boolean {
-    const expectedHash = this.createHash(JSON.stringify({
-      id: entry.id,
-      timestamp: entry.timestamp,
-      level: entry.level,
-      message: entry.message,
-      metadata: entry.metadata,
-    }));
+    const expectedHash = this.createHash(
+      JSON.stringify({
+        id: entry.id,
+        timestamp: entry.timestamp,
+        level: entry.level,
+        message: entry.message,
+        metadata: entry.metadata,
+      })
+    );
 
     if (entry.hash !== expectedHash) {
       return false;
@@ -164,8 +166,8 @@ export class EnhancedSecurityManager {
 
     // XOR encryption (not secure for production)
     let encrypted = '';
-    for (let i = 0; i < data.length; i++) {
-      encrypted += String.fromCharCode(data.charCodeAt(i) ^ (key[i % key.length] || 0));
+    for (let index = 0; index < data.length; index++) {
+      encrypted += String.fromCharCode(data.charCodeAt(index) ^ (key[index % key.length] || 0));
     }
 
     return Buffer.from(encrypted, 'binary').toString('base64');
@@ -186,31 +188,33 @@ export class EnhancedSecurityManager {
     const encrypted = Buffer.from(encryptedData, 'base64').toString('binary');
 
     let decrypted = '';
-    for (let i = 0; i < encrypted.length; i++) {
-      decrypted += String.fromCharCode(encrypted.charCodeAt(i) ^ (key[i % key.length] || 0));
+    for (let index = 0; index < encrypted.length; index++) {
+      decrypted += String.fromCharCode(
+        encrypted.charCodeAt(index) ^ (key[index % key.length] || 0)
+      );
     }
 
     return decrypted;
   }
 
   private scanObject(
-    obj: unknown,
+    object: unknown,
     path: string,
     piiFields: string[],
     recommendations: string[]
   ): void {
-    if (!obj || typeof obj !== 'object') {
+    if (!object || typeof object !== 'object') {
       return;
     }
 
-    if (Array.isArray(obj)) {
-      obj.forEach((item, index) => {
+    if (Array.isArray(object)) {
+      object.forEach((item, index) => {
         this.scanObject(item, `${path}[${index}]`, piiFields, recommendations);
       });
       return;
     }
 
-    const record = obj as Record<string, unknown>;
+    const record = object as Record<string, unknown>;
 
     for (const [key, value] of Object.entries(record)) {
       const currentPath = path ? `${path}.${key}` : key;
@@ -235,50 +239,21 @@ export class EnhancedSecurityManager {
   }
 
   private isPIIField(fieldName: string): boolean {
-    const lowerField = fieldName.toLowerCase();
-    return this.config.piiFields.some(piiField =>
-      lowerField.includes(piiField.toLowerCase())
-    );
+    return PIIPatterns.isSensitiveField(fieldName, this.config.piiFields);
   }
 
   private containsPIIPattern(value: string): boolean {
-    // Common PII patterns
-    const patterns = [
-      /\b\d{3}-\d{2}-\d{4}\b/, // SSN
-      /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/, // Credit card
-      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/, // Email
-      /\b\d{3}[-\s]?\d{3}[-\s]?\d{4}\b/, // Phone
-      /\beyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/, // JWT
-    ];
-
-    return patterns.some(pattern => pattern.test(value));
+    // Use centralized PII detection
+    return detectPIITypes(value).length > 0;
   }
 
   private maskPII(data: unknown): unknown {
-    if (!data || typeof data !== 'object') {
-      return data;
-    }
-
-    if (Array.isArray(data)) {
-      return data.map(item => this.maskPII(item));
-    }
-
-    const record = data as Record<string, unknown>;
-    const masked: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(record)) {
-      if (this.isPIIField(key)) {
-        masked[key] = '[REDACTED]';
-      } else if (typeof value === 'string' && this.containsPIIPattern(value)) {
-        masked[key] = '[REDACTED]';
-      } else if (typeof value === 'object' && value !== null) {
-        masked[key] = this.maskPII(value);
-      } else {
-        masked[key] = value;
-      }
-    }
-
-    return masked;
+    // Use centralized sanitization logic
+    return PIIPatterns.sanitizeObject(data, {
+      sensitiveFields: this.config.piiFields,
+      redactionText: '[REDACTED]',
+      deep: true,
+    });
   }
 
   private generateId(): string {
@@ -298,18 +273,24 @@ export class EnhancedSecurityManager {
       timestamp: entry.timestamp,
       hash: entry.hash,
     });
-    return createHash('sha256').update(data + key).digest('hex');
+    return createHash('sha256')
+      .update(data + key)
+      .digest('hex');
   }
 
   private verifySignature(entry: AuditEntry, key: string): boolean {
-    if (!entry.signature) return false;
+    if (!entry.signature) {
+      return false;
+    }
 
     const data = JSON.stringify({
       id: entry.id,
       timestamp: entry.timestamp,
       hash: entry.hash,
     });
-    const expectedSignature = createHash('sha256').update(data + key).digest('hex');
+    const expectedSignature = createHash('sha256')
+      .update(data + key)
+      .digest('hex');
 
     return entry.signature === expectedSignature;
   }

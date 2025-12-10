@@ -1,8 +1,9 @@
 import * as winston from 'winston';
+/* eslint-disable @typescript-eslint/naming-convention */
 import DailyRotateFile from 'winston-daily-rotate-file';
 
-import type { LogContext } from '../context/async-context';
-import { contextManager } from '../context/async-context';
+/* eslint-enable @typescript-eslint/naming-convention */
+import { contextManager, type LogContext } from '../context/async-context';
 import type { ILogger } from './logger.interface';
 
 /**

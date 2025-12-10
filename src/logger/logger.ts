@@ -1,15 +1,25 @@
+import { hostname } from 'node:os';
+
 import * as winston from 'winston';
+/* eslint-disable @typescript-eslint/naming-convention */
 import LokiTransport from 'winston-loki';
 
+/* eslint-enable @typescript-eslint/naming-convention */
 import type { LoggerConfig } from '../config/logger.config';
-import type { LogContext } from '../context/async-context';
-import { contextManager } from '../context/async-context';
-import { applySchemaContract } from '../utils/log-schema';
-import type { ILogger } from './logger.interface';
-import { AsyncLoggingQueue, type LogEntry, type AsyncQueueConfig } from '../utils/async-logging-queue';
-import { TransportHealthMonitor, type HealthMonitorConfig } from '../utils/transport-health-monitor';
+import { contextManager, type LogContext } from '../context/async-context';
+import {
+  AsyncLoggingQueue,
+  type AsyncQueueConfig,
+  type LogEntry,
+} from '../utils/async-logging-queue';
 import { EnhancedSecurityManager, type SecurityConfig } from '../utils/enhanced-security';
+import { applySchemaContract } from '../utils/log-schema';
 import { MetricsCollector, type MetricsConfig } from '../utils/metrics-collector';
+import {
+  type HealthMonitorConfig,
+  TransportHealthMonitor,
+} from '../utils/transport-health-monitor';
+import type { ILogger } from './logger.interface';
 
 const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
@@ -31,20 +41,16 @@ const customLevels = {
 };
 
 export class CentralLogger implements ILogger {
-  private logger: winston.Logger;
+  private readonly logger: winston.Logger;
   private readonly config: LoggerConfig;
   private lokiFailureCount = 0;
   private lokiCircuitOpen = false;
-  private asyncQueue: AsyncLoggingQueue;
-  private healthMonitor: TransportHealthMonitor;
-  private securityManager: EnhancedSecurityManager;
-  private metricsCollector: MetricsCollector;
+  private readonly asyncQueue: AsyncLoggingQueue;
+  private readonly healthMonitor: TransportHealthMonitor;
+  private readonly securityManager: EnhancedSecurityManager;
+  private readonly metricsCollector: MetricsCollector;
 
-  constructor(config: LoggerConfig, existingLogger?: winston.Logger) {
-    this.config = config;
-    this.logger = existingLogger ?? this.createLogger();
-
-    // Initialize async logging queue
+  private initializeAsyncQueue(): void {
     const queueConfig: AsyncQueueConfig = {
       maxQueueSize: parseInt(process.env['LOG_QUEUE_SIZE'] ?? '10000'),
       flushInterval: parseInt(process.env['LOG_FLUSH_INTERVAL'] ?? '5000'),
@@ -58,10 +64,10 @@ export class CentralLogger implements ILogger {
       retryBackoffMultiplier: parseFloat(process.env['LOG_RETRY_BACKOFF_MULTIPLIER'] ?? '2'),
       maxRetryDelay: parseInt(process.env['LOG_MAX_RETRY_DELAY'] ?? '30000'),
     };
-
     this.asyncQueue = new AsyncLoggingQueue(queueConfig, this.processLogBatch.bind(this));
+  }
 
-    // Initialize transport health monitor
+  private initializeHealthMonitor(): void {
     const healthConfig: HealthMonitorConfig = {
       healthCheckInterval: parseInt(process.env['LOG_HEALTH_CHECK_INTERVAL'] ?? '30000'),
       failureThreshold: parseInt(process.env['LOG_FAILURE_THRESHOLD'] ?? '5'),
@@ -69,23 +75,27 @@ export class CentralLogger implements ILogger {
       circuitBreakerTimeout: parseInt(process.env['LOG_CIRCUIT_BREAKER_TIMEOUT'] ?? '60000'),
       enableAutoFailover: process.env['LOG_ENABLE_AUTO_FAILOVER'] !== 'false',
     };
-
     this.healthMonitor = new TransportHealthMonitor(healthConfig);
     this.setupTransportHealthMonitoring();
+  }
 
-    // Initialize enhanced security manager
+  private initializeSecurityManager(): void {
     const securityConfig: SecurityConfig = {
       enablePIIDetection: process.env['LOG_ENABLE_PII_DETECTION'] !== 'false',
       enableEncryption: process.env['LOG_ENABLE_ENCRYPTION'] === 'true',
       enableAuditSigning: process.env['LOG_ENABLE_AUDIT_SIGNING'] === 'true',
-      piiFields: (process.env['LOG_PII_FIELDS'] ?? 'password,token,secret,email,phone,ssn').split(','),
-      ...(process.env['LOG_ENCRYPTION_KEY'] && { encryptionKey: process.env['LOG_ENCRYPTION_KEY'] }),
+      piiFields: (process.env['LOG_PII_FIELDS'] ?? 'password,token,secret,email,phone,ssn').split(
+        ','
+      ),
+      ...(process.env['LOG_ENCRYPTION_KEY'] && {
+        encryptionKey: process.env['LOG_ENCRYPTION_KEY'],
+      }),
       ...(process.env['LOG_AUDIT_KEY'] && { auditKey: process.env['LOG_AUDIT_KEY'] }),
     };
-
     this.securityManager = new EnhancedSecurityManager(securityConfig);
+  }
 
-    // Initialize metrics collector
+  private initializeMetricsCollector(): void {
     const metricsConfig: MetricsConfig = {
       enableMetrics: process.env['LOG_ENABLE_METRICS'] !== 'false',
       metricsInterval: parseInt(process.env['LOG_METRICS_INTERVAL'] ?? '10000'),
@@ -97,8 +107,16 @@ export class CentralLogger implements ILogger {
         deadLetterGrowth: parseInt(process.env['LOG_ALERT_DEAD_LETTER_GROWTH'] ?? '10'),
       },
     };
-
     this.metricsCollector = new MetricsCollector(metricsConfig, () => this.asyncQueue.getStats());
+  }
+
+  constructor(config: LoggerConfig, existingLogger?: winston.Logger) {
+    this.config = config;
+    this.logger = existingLogger ?? this.createLogger();
+    this.initializeAsyncQueue();
+    this.initializeHealthMonitor();
+    this.initializeSecurityManager();
+    this.initializeMetricsCollector();
   }
 
   /**
@@ -106,15 +124,18 @@ export class CentralLogger implements ILogger {
    */
   private setupTransportHealthMonitoring(): void {
     // Register console transport (always healthy)
-    this.healthMonitor.registerTransport({
-      name: 'console',
-      url: 'console://stdout',
-      healthCheck: async () => true,
-      send: async (data) => {
-        // Console transport is handled by Winston
-        this.logger.info('Health check data', data as any);
+    this.healthMonitor.registerTransport(
+      {
+        name: 'console',
+        url: 'console://stdout',
+        healthCheck: async () => true,
+        send: async (data) => {
+          // Console transport is handled by Winston
+          this.logger.info('Health check data', data as unknown);
+        },
       },
-    }, true); // Primary transport
+      true
+    ); // Primary transport
 
     // Register file transport if enabled
     if (this.config.enableFileTransport) {
@@ -123,7 +144,7 @@ export class CentralLogger implements ILogger {
         url: `file://${this.config.fileLogPath}`,
         healthCheck: async () => {
           // Check if we can write to the log directory
-          const fs = await import('fs/promises');
+          const fs = await import('node:fs/promises');
           try {
             await fs.access(this.config.fileLogPath);
             return true;
@@ -133,7 +154,7 @@ export class CentralLogger implements ILogger {
         },
         send: async (data) => {
           // File transport is handled by Winston
-          this.logger.info('File transport data', data as any);
+          this.logger.info('File transport data', data as unknown);
         },
       });
     }
@@ -146,9 +167,12 @@ export class CentralLogger implements ILogger {
         healthCheck: async () => {
           try {
             const axios = (await import('axios')).default;
-            const response = await axios.get(`${this.config.loki.protocol}://${this.config.loki.host}:${this.config.loki.port}/ready`, {
-              timeout: 5000,
-            });
+            const response = await axios.get(
+              `${this.config.loki.protocol}://${this.config.loki.host}:${this.config.loki.port}/ready`,
+              {
+                timeout: 5000,
+              }
+            );
             return response.status === 200;
           } catch {
             return false;
@@ -156,7 +180,7 @@ export class CentralLogger implements ILogger {
         },
         send: async (data) => {
           // Loki transport is handled by Winston
-          this.logger.info('Loki transport data', data as any);
+          this.logger.info('Loki transport data', data as unknown);
         },
       });
     }
@@ -168,7 +192,9 @@ export class CentralLogger implements ILogger {
 
     const samplingRate = this.normalizeSamplingRate(this.config.samplingRate);
     const samplingFilter = winston.format((info) => {
-      if (samplingRate >= 1) return info;
+      if (samplingRate >= 1) {
+        return info;
+      }
       return Math.random() <= samplingRate ? info : false;
     });
 
@@ -263,7 +289,7 @@ export class CentralLogger implements ILogger {
         service: this.config.serviceName,
         environment: this.config.environment,
         pid: process.pid,
-        hostname: require('node:os').hostname(),
+        hostname: hostname(),
       },
       transports,
       exceptionHandlers: [
@@ -279,15 +305,25 @@ export class CentralLogger implements ILogger {
     });
   }
 
-  private enrichWithContext() {
+  private enrichWithContext(): winston.Logform.Format {
     return winston.format((info) => {
       const context = contextManager.getContext();
       info['traceId'] = context.traceId;
-      if (context.spanId) info['spanId'] = context.spanId;
-      if (context.userId) info['userId'] = context.userId;
-      if (context.requestId) info['requestId'] = context.requestId;
-      if (context.sessionId) info['sessionId'] = context.sessionId;
-      if (context.correlationId) info['correlationId'] = context.correlationId;
+      if (context.spanId) {
+        info['spanId'] = context.spanId;
+      }
+      if (context.userId) {
+        info['userId'] = context.userId;
+      }
+      if (context.requestId) {
+        info['requestId'] = context.requestId;
+      }
+      if (context.sessionId) {
+        info['sessionId'] = context.sessionId;
+      }
+      if (context.correlationId) {
+        info['correlationId'] = context.correlationId;
+      }
       if (context.metadata && Object.keys(context.metadata).length > 0) {
         info['metadata'] = context.metadata;
       }
@@ -295,7 +331,7 @@ export class CentralLogger implements ILogger {
     })();
   }
 
-  private schemaValidator() {
+  private schemaValidator(): winston.Logform.Format {
     if (this.config.enforceSchema === false) {
       return winston.format((info) => info)();
     }
@@ -303,9 +339,15 @@ export class CentralLogger implements ILogger {
   }
 
   private normalizeSamplingRate(rate: number | undefined): number {
-    if (rate === undefined || Number.isNaN(rate)) return 1;
-    if (rate < 0) return 0;
-    if (rate > 1) return 1;
+    if (rate === undefined || Number.isNaN(rate)) {
+      return 1;
+    }
+    if (rate < 0) {
+      return 0;
+    }
+    if (rate > 1) {
+      return 1;
+    }
     return rate;
   }
 
@@ -386,7 +428,9 @@ export class CentralLogger implements ILogger {
   private parseFileSize(sizeString: string): number {
     const units: Record<string, number> = { k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024 };
     const match = sizeString.toLowerCase().match(/^(\d+)([kmg])?b?$/);
-    if (!match?.[1]) return 100 * 1024 * 1024; // Default 100MB
+    if (!match?.[1]) {
+      return 100 * 1024 * 1024;
+    } // Default 100MB
     const value = parseInt(match[1], 10);
     const unit = match[2] ?? 'b';
     // eslint-disable-next-line security/detect-object-injection
@@ -487,7 +531,10 @@ export class CentralLogger implements ILogger {
    * Encrypt sensitive fields in metadata
    */
   private encryptSensitiveFields(data: unknown): unknown {
-    if (!this.securityManager['config'].enableEncryption || !this.securityManager['config'].encryptionKey) {
+    if (
+      !this.securityManager['config'].enableEncryption ||
+      !this.securityManager['config'].encryptionKey
+    ) {
       return data;
     }
 
@@ -498,18 +545,18 @@ export class CentralLogger implements ILogger {
   /**
    * Recursively encrypt sensitive fields
    */
-  private deepEncrypt(obj: unknown, sensitiveFields: string[]): unknown {
-    if (!obj || typeof obj !== 'object') {
-      return obj;
+  private deepEncrypt(object: unknown, sensitiveFields: string[]): unknown {
+    if (!object || typeof object !== 'object') {
+      return object;
     }
 
-    if (Array.isArray(obj)) {
-      return obj.map(item => this.deepEncrypt(item, sensitiveFields));
+    if (Array.isArray(object)) {
+      return object.map((item) => this.deepEncrypt(item, sensitiveFields));
     }
 
     const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+    for (const [key, value] of Object.entries(object)) {
+      if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
         // Encrypt sensitive field
         result[key] = this.securityManager['encryptData'](String(value));
       } else if (typeof value === 'object') {
@@ -553,7 +600,7 @@ export class CentralLogger implements ILogger {
       try {
         // Use Winston's log method with the appropriate level
         const metadata = typeof entry.meta === 'object' && entry.meta !== null ? entry.meta : {};
-        (this.logger as any).log(entry.level, entry.message, {
+        (this.logger as winston.Logger).log(entry.level, entry.message, {
           ...metadata,
           error: entry.error,
           timestamp: entry.timestamp,
@@ -563,7 +610,7 @@ export class CentralLogger implements ILogger {
       } catch (error) {
         // If Winston fails, log to console as fallback and mark transport as unhealthy
         console.error('Failed to process log entry:', error, entry);
-        this.healthMonitor.checkHealth(activeTransport);
+        void this.healthMonitor.checkHealth(activeTransport);
         throw error;
       }
     }
@@ -572,56 +619,59 @@ export class CentralLogger implements ILogger {
   /**
    * Get async queue statistics
    */
-  getQueueStats() {
+  getQueueStats(): ReturnType<AsyncLoggingQueue['getStats']> {
     return this.asyncQueue.getStats();
   }
 
   /**
    * Get transport health status
    */
-  getTransportHealth() {
+  getTransportHealth(): ReturnType<TransportHealthMonitor['getHealthStatus']> {
     return this.healthMonitor.getHealthStatus();
   }
 
   /**
    * Get dead letter queue contents
    */
-  getDeadLetterQueue() {
+  getDeadLetterQueue(): ReturnType<AsyncLoggingQueue['getDeadLetterQueue']> {
     return this.asyncQueue.getDeadLetterQueue();
   }
 
   /**
    * Clear dead letter queue
    */
-  clearDeadLetterQueue() {
+  clearDeadLetterQueue(): void {
     this.asyncQueue.clearDeadLetterQueue();
   }
 
   /**
    * Re-queue entries from dead letter queue
    */
-  requeueFromDeadLetter(count: number = 1) {
+  requeueFromDeadLetter(count = 1): LogEntry[] {
     return this.asyncQueue.requeueFromDeadLetter(count);
   }
 
   /**
    * Get metrics summary
    */
-  getMetricsSummary() {
+  getMetricsSummary(): ReturnType<MetricsCollector['getMetricsSummary']> {
     return this.metricsCollector.getMetricsSummary();
   }
 
   /**
    * Get metrics for a time range
    */
-  getMetricsRange(startTime: number, endTime: number) {
+  getMetricsRange(
+    startTime: number,
+    endTime: number
+  ): ReturnType<MetricsCollector['getMetricsRange']> {
     return this.metricsCollector.getMetricsRange(startTime, endTime);
   }
 
   /**
    * Export all metrics data
    */
-  exportMetrics() {
+  exportMetrics(): ReturnType<MetricsCollector['exportMetrics']> {
     return this.metricsCollector.exportMetrics();
   }
 

@@ -3,10 +3,7 @@
  */
 
 declare module '@kitiumai/logger' {
-  export function createLogger(
-    presetOrConfig?: any,
-    overrides?: Record<string, any>,
-  ): any;
+  export function createLogger(presetOrConfig?: any, overrides?: Record<string, any>): any;
   export function getLogger(): any;
   export function initializeLogger(config: any): any;
   export function getGlobalLogger(): any;
@@ -64,29 +61,20 @@ declare module '@kitiumai/logger/middleware/nest' {
 
 declare module '@kitiumai/logger/utils' {
   export function createTimer(label: string): any;
-  export function logFunctionCall(
-    target: any,
-    propertyKey: string,
-    descriptor: any,
-  ): any;
+  export function logFunctionCall(target: any, propertyKey: string, descriptor: any): any;
   export function withErrorLogging(
     fn: (...args: any[]) => Promise<any>,
-    logger?: any,
+    logger?: any
   ): (...args: any[]) => Promise<any>;
   export function withErrorLoggingSync(
     fn: (...args: any[]) => any,
-    logger?: any,
+    logger?: any
   ): (...args: any[]) => any;
   export function withLoggingContext(
     fn: (...args: any[]) => Promise<any>,
-    context?: any,
+    context?: any
   ): (...args: any[]) => Promise<any>;
-  export function auditLog(
-    action: string,
-    actor: string,
-    resource: any,
-    details?: any,
-  ): void;
+  export function auditLog(action: string, actor: string, resource: any, details?: any): void;
   export const BatchLogger: any;
   export const LoggableError: any;
 
@@ -113,18 +101,9 @@ declare module '@kitiumai/logger/utils/metrics' {
 }
 
 declare module '@kitiumai/logger/utils/error-handler' {
-  export function retryWithBackoff(
-    fn: () => Promise<any>,
-    config: any,
-  ): Promise<any>;
-  export function safeAsync(
-    fn: () => Promise<any>,
-    fallback?: any,
-  ): Promise<any>;
-  export function withGracefulDegradation(
-    fn: () => Promise<any>,
-    fallback?: any,
-  ): Promise<any>;
+  export function retryWithBackoff(fn: () => Promise<any>, config: any): Promise<any>;
+  export function safeAsync(fn: () => Promise<any>, fallback?: any): Promise<any>;
+  export function withGracefulDegradation(fn: () => Promise<any>, fallback?: any): Promise<any>;
   export const CircuitBreaker: any;
 
   export type RetryConfig = any;
