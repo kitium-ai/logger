@@ -3,6 +3,80 @@
 An enterprise-ready centralized logging system with structured logging and Grafana Loki integration
 for cloud-native applications.
 
+## What is @kitiumai/logger?
+
+**@kitiumai/logger** is a comprehensive, enterprise-grade logging solution designed specifically for modern Node.js applications. It provides structured logging, distributed tracing, centralized log aggregation, and extensive middleware support for frameworks like Express.js, Next.js, and NestJS.
+
+### Key Capabilities
+
+- **5 Logger Types**: Console, File, In-Memory, and Central (Grafana Loki) logging
+- **Framework Integration**: Native middleware for Express, Next.js, NestJS, and Fastify
+- **Distributed Tracing**: Automatic trace ID/span ID propagation with OpenTelemetry support
+- **Security Features**: Automatic PII detection and redaction
+- **Performance Monitoring**: Request timing, memory tracking, and custom metrics
+- **Testing Support**: Complete mock logger implementations for Jest/Vitest
+- **Type Safety**: Full TypeScript support with comprehensive type definitions
+
+## Why Do You Need This Package?
+
+In modern cloud-native applications, logging is critical for:
+
+### 🔍 **Observability & Debugging**
+- **Distributed Tracing**: Track requests across microservices with automatic trace/span ID correlation
+- **Context Propagation**: Maintain user, session, and request context throughout async operations
+- **Performance Monitoring**: Track response times, memory usage, and custom business metrics
+
+### 🛡️ **Security & Compliance**
+- **PII Protection**: Automatic detection and redaction of sensitive data (passwords, tokens, API keys)
+- **Audit Logging**: Compliance-ready audit trails with structured, tamper-evident logs
+- **Security Monitoring**: Integration with security information and event management (SIEM) systems
+
+### 🚀 **Production Reliability**
+- **Centralized Aggregation**: All logs in one place with Grafana Loki for easy querying and analysis
+- **Error Tracking**: Structured error logging with stack traces and contextual metadata
+- **Health Monitoring**: Built-in health checks and circuit breakers for resilient logging
+
+### 🧪 **Developer Experience**
+- **Testing Support**: Comprehensive mocking utilities eliminate the need to write custom mocks
+- **Type Safety**: Full TypeScript support prevents logging-related runtime errors
+- **Framework Integration**: Drop-in middleware for popular Node.js frameworks
+
+## Competitor Comparison
+
+| Feature | @kitiumai/logger | Winston | Pino | Bunyan | Morgan |
+|---------|------------------|---------|------|--------|--------|
+| **Logger Types** | 5 (Console, File, Memory, Loki) | 4+ | 3 | 3 | 1 |
+| **Loki Integration** | ✅ Native | ❌ Manual | ❌ Manual | ❌ Manual | ❌ |
+| **Framework Middleware** | Express, Next.js, NestJS, Fastify | Basic Express | Basic Express | Basic Express | Express Only |
+| **Distributed Tracing** | ✅ OpenTelemetry | ❌ | ❌ | ❌ | ❌ |
+| **PII Redaction** | ✅ Automatic | ❌ | ❌ | ❌ | ❌ |
+| **Testing Mocks** | ✅ Complete | ❌ | ❌ | ❌ | ❌ |
+| **TypeScript Support** | ✅ Full | ⚠️ Partial | ⚠️ Partial | ⚠️ Partial | ❌ |
+| **Performance Metrics** | ✅ Built-in | ❌ | ❌ | ❌ | ❌ |
+| **Health Checks** | ✅ Built-in | ❌ | ❌ | ❌ | ❌ |
+| **Bundle Size** | 🟢 Small (Tree-shakeable) | 🟡 Medium | 🟢 Small | 🟡 Medium | 🟢 Small |
+
+## Unique Selling Proposition (USP)
+
+### 🎯 **Production-Ready Enterprise Features**
+Unlike basic logging libraries, @kitiumai/logger includes enterprise-grade features out-of-the-box:
+
+- **Cloud-Native Architecture**: Native Grafana Loki integration for scalable log aggregation
+- **Security-First Design**: Automatic PII detection and compliance-ready audit logging
+- **Framework Agnostic**: Works seamlessly across Express, Next.js, NestJS, and Fastify
+- **Zero-Config Testing**: Complete mock implementations eliminate testing friction
+
+### 🚀 **Developer Productivity**
+- **One-Line Setup**: Environment-based auto-configuration for development/staging/production
+- **Type-Safe APIs**: Full TypeScript support prevents logging bugs at compile time
+- **Rich Context**: Automatic propagation of trace IDs, user context, and session data
+- **Performance Insights**: Built-in metrics collection and performance monitoring
+
+### 🛡️ **Compliance & Security**
+- **GDPR/CCPA Ready**: Automatic sensitive data redaction and privacy protection
+- **Audit Trails**: Structured, immutable audit logs for regulatory compliance
+- **Security Monitoring**: Integration points for SIEM systems and security alerting
+
 ## Features
 
 ✅ **Multiple Logger Types** - Console, File, In-Memory, or Central (Loki) logging ✅ **Structured
@@ -523,6 +597,245 @@ batch
 await batch.flush();
 ```
 
+## Testing & Mocking
+
+The `@kitiumai/logger` package provides comprehensive mocking utilities for testing applications that use the logger. These mocks are compatible with both Jest and Vitest, eliminating the need for consumers to write their own mock implementations.
+
+### Quick Start
+
+```typescript
+import {
+  createMockLogger,
+  createLoggerSpy,
+  createIsolatedMockLogger
+} from '@kitiumai/logger';
+
+describe('MyService', () => {
+  it('should log user actions', () => {
+    const mockLogger = createMockLogger();
+    const service = new MyService(mockLogger);
+
+    service.doSomething();
+
+    expect(mockLogger.calls).toHaveLength(1);
+    expect(mockLogger.getLastCall()?.message).toBe('Something happened');
+  });
+});
+```
+
+### Mock Logger Classes and Functions
+
+#### `MockLogger`
+
+A complete implementation of the `ILogger` interface that captures all log calls.
+
+**Methods:**
+- `calls`: Get all captured log calls (readonly)
+- `clear()`: Clear all captured calls
+- `getCallsByLevel(level: string)`: Get calls for a specific log level
+- `getLastCall()`: Get the most recent log call
+- `hasLogs(level?: string)`: Check if any logs exist (optionally by level)
+- `findCallsByMessage(text: string)`: Find calls containing specific text
+
+**Example:**
+```typescript
+const logger = createMockLogger();
+
+logger.info('User logged in', { userId: 123 });
+logger.error('Database error', { code: 'CONNECTION_FAILED' }, new Error('Connection timeout'));
+
+console.log(logger.calls.length); // 2
+console.log(logger.getCallsByLevel('error')); // [error call]
+console.log(logger.hasLogs('info')); // true
+console.log(logger.findCallsByMessage('Database')); // [error call]
+```
+
+#### `createMockLogger()`
+
+Creates a new `MockLogger` instance.
+
+```typescript
+const logger = createMockLogger();
+```
+
+#### `createMockLoggerWithContext(context)`
+
+Creates a mock logger with initial context.
+
+```typescript
+const logger = createMockLoggerWithContext({
+  traceId: 'test-123',
+  userId: 'user-456'
+});
+
+logger.info('Test message');
+// The call will include the context
+```
+
+#### `createLoggerSpy()`
+
+Creates a spy object with additional utility methods.
+
+```typescript
+const spy = createLoggerSpy();
+
+// Use spy.logger for logging
+spy.logger.info('Test message');
+
+// Access utilities
+console.log(spy.calls); // readonly array
+spy.clear(); // clear calls
+console.log(spy.hasLogs('info')); // true
+```
+
+#### `createIsolatedMockLogger()`
+
+Creates a logger with testing-specific assertion methods.
+
+```typescript
+const { logger, reset, getLogs, assertNoErrors, assertLogged } = createIsolatedMockLogger();
+
+logger.error('Something went wrong');
+
+// These methods throw on failure
+assertNoErrors(); // Throws: "Expected no error logs, but found 1"
+assertLogged('went wrong'); // Passes
+assertLogged('nonexistent'); // Throws: "Expected logger to have logged message containing 'nonexistent'"
+```
+
+### Testing Services with Dependencies
+
+```typescript
+class UserService {
+  constructor(private logger: ILogger) {}
+
+  async createUser(userData: UserData): Promise<User> {
+    this.logger.info('Creating user', { email: userData.email });
+
+    try {
+      const user = await this.userRepository.create(userData);
+      this.logger.info('User created successfully', { userId: user.id });
+      return user;
+    } catch (error) {
+      this.logger.error('Failed to create user', { email: userData.email }, error);
+      throw error;
+    }
+  }
+}
+
+// Test
+describe('UserService', () => {
+  let mockLogger: MockLogger;
+  let service: UserService;
+
+  beforeEach(() => {
+    mockLogger = createMockLogger();
+    service = new UserService(mockLogger);
+  });
+
+  it('should log successful user creation', async () => {
+    const userData = { email: 'user@example.com', name: 'John Doe' };
+
+    await service.createUser(userData);
+
+    expect(mockLogger.calls).toHaveLength(2);
+    expect(mockLogger.findCallsByMessage('Creating user')).toHaveLength(1);
+    expect(mockLogger.findCallsByMessage('successfully')).toHaveLength(1);
+  });
+
+  it('should log errors during user creation', async () => {
+    // Mock repository to throw
+    mockUserRepository.create.mockRejectedValue(new Error('Database error'));
+
+    await expect(service.createUser(userData)).rejects.toThrow();
+
+    // Assert logging
+    expect(mockLogger.getCallsByLevel('error')).toHaveLength(1);
+    const errorCall = mockLogger.getLastCall();
+    expect(errorCall?.message).toBe('Failed to create user');
+    expect(errorCall?.error?.message).toBe('Database error');
+  });
+});
+```
+
+### Testing Middleware
+
+```typescript
+import { createMockLogger } from '@kitiumai/logger';
+
+describe('Logging Middleware', () => {
+  it('should log HTTP requests', () => {
+    const mockLogger = createMockLogger();
+    const middleware = loggingMiddleware({ logger: mockLogger });
+
+    const mockReq = { method: 'GET', url: '/api/users' };
+    const mockRes = {};
+    const mockNext = jest.fn();
+
+    middleware(mockReq, mockRes, mockNext);
+
+    expect(mockLogger.hasLogs('http')).toBe(true);
+    expect(mockLogger.findCallsByMessage('GET /api/users')).toHaveLength(1);
+  });
+});
+```
+
+### Testing with Context
+
+```typescript
+describe('Context-aware logging', () => {
+  it('should include context in logs', async () => {
+    const logger = createMockLogger();
+
+    await logger.withContext({ traceId: 'req-123', userId: 'user-456' }, async () => {
+      logger.info('Processing request');
+
+      // Context is automatically included
+      const call = logger.getLastCall();
+      expect(call?.context?.traceId).toBe('req-123');
+      expect(call?.context?.userId).toBe('user-456');
+    });
+  });
+});
+```
+
+### Best Practices
+
+1. **Use Appropriate Mock Type**
+   - `createMockLogger()`: Basic logging capture
+   - `createLoggerSpy()`: Additional utility methods
+   - `createIsolatedMockLogger()`: Built-in assertions for simple tests
+
+2. **Clear Between Tests**
+   ```typescript
+   let mockLogger: MockLogger;
+
+   beforeEach(() => {
+     mockLogger = createMockLogger();
+   });
+   ```
+
+3. **Test Logging Behavior**
+   ```typescript
+   // Good
+   expect(logger.findCallsByMessage('User not found')).toHaveLength(1);
+   expect(logger.getCallsByLevel('error')).toHaveLength(1);
+
+   // Less useful
+   expect(logger.calls.length).toBeGreaterThan(0);
+   ```
+
+4. **Test Error Logging**
+   ```typescript
+   try {
+     await riskyOperation();
+   } catch (error) {
+     const errorLogs = logger.getCallsByLevel('error');
+     expect(errorLogs).toHaveLength(1);
+     expect(errorLogs[0].error).toBe(error);
+   }
+   ```
+
 ## Docker Setup (Loki + Grafana)
 
 ### Start the Stack
@@ -617,6 +930,228 @@ const data = {
 const safe = sanitizeData(data, ['password', 'apiKey']);
 // Result: { email: 'user@example.com', password: '[REDACTED]', apiKey: '[REDACTED]' }
 ```
+
+## API Reference
+
+### Core Logger APIs
+
+#### `createLogger(preset?, overrides?)`
+Create a logger instance with environment-based presets.
+
+**Parameters:**
+- `preset?: 'development' | 'staging' | 'production'` - Environment preset
+- `overrides?: Partial<LoggerConfig>` - Configuration overrides
+
+**Returns:** `ILogger` - Configured logger instance
+
+**Example:**
+```typescript
+const logger = createLogger('production', { samplingRate: 0.5 });
+```
+
+#### `initializeLogger(config)`
+Initialize the global logger instance.
+
+**Parameters:**
+- `config: LoggerConfig` - Logger configuration
+
+**Returns:** `CentralLogger` - Initialized logger
+
+#### `getLogger()`
+Get the current global logger instance.
+
+**Returns:** `ILogger` - Current logger instance
+
+### Logger Types
+
+#### `ConsoleLogger`
+Development logger with colored console output.
+
+#### `FileLogger`
+File-based logger with rotation support.
+
+#### `InMemoryLogger`
+In-memory logger for testing and development.
+
+#### `CentralLogger`
+Production logger with Grafana Loki integration.
+
+### Middleware APIs
+
+#### Express.js Middleware
+
+```typescript
+import {
+  tracingMiddleware,
+  errorLoggingMiddleware,
+  performanceMetricsMiddleware,
+  userContextMiddleware,
+  bodyLoggingMiddleware
+} from '@kitiumai/logger/middleware';
+```
+
+- `tracingMiddleware()` - Adds trace ID/span ID to requests
+- `errorLoggingMiddleware()` - Logs errors with stack traces
+- `performanceMetricsMiddleware()` - Tracks request duration and memory
+- `userContextMiddleware(userExtractor?)` - Extracts user context from requests
+- `bodyLoggingMiddleware(options?)` - Logs request/response bodies
+
+#### Next.js Middleware
+
+```typescript
+import {
+  withNextApiLogger,
+  withNextRouteLogger,
+  createNextFetchWrapper
+} from '@kitiumai/logger/middleware/next';
+```
+
+- `withNextApiLogger(handler)` - Wraps API route handlers
+- `withNextRouteLogger(handler)` - Wraps App Router route handlers
+- `createNextFetchWrapper(options?)` - Wraps outbound fetch calls
+
+#### NestJS Middleware
+
+```typescript
+import {
+  createNestLoggingMiddleware,
+  createNestExceptionFilter
+} from '@kitiumai/logger/middleware/nest';
+```
+
+- `createNestLoggingMiddleware()` - Creates logging middleware
+- `createNestExceptionFilter()` - Creates exception filter
+
+### Context Management
+
+#### `bridgeExpressRequest(req)`
+Extract trace context from Express request headers.
+
+#### `bridgeOpenTelemetryContext()`
+Bridge OpenTelemetry context to logger context.
+
+#### `bridgeHeadersToContext(headers)`
+Extract context from raw headers object.
+
+#### `withLoggingContext(context, fn)`
+Run async function with additional context.
+
+### Utility APIs
+
+#### `createTimer(name?)`
+Create a performance timer.
+
+**Returns:** `Timer` - Timer instance with `.start()`, `.stop()`, `.duration()` methods
+
+#### `LoggableError`
+Error class that includes logging context.
+
+#### `auditLog(action, details, user?)`
+Create structured audit log entry.
+
+#### `BatchLogger`
+Batch multiple log operations for performance.
+
+#### `withErrorLogging(fn, context?)`
+Wrap async function with automatic error logging.
+
+#### `withErrorLoggingSync(fn, context?)`
+Wrap sync function with automatic error logging.
+
+### Security & PII Protection
+
+#### `sanitizeObject(obj, fields?)`
+Recursively sanitize object fields.
+
+#### `redactValue(value, pattern?)`
+Redact sensitive values.
+
+#### `detectPIITypes(text)`
+Detect PII types in text.
+
+#### `isSensitiveField(fieldName)`
+Check if field name indicates sensitive data.
+
+### Metrics & Monitoring
+
+#### `loggerMetrics`
+Access to metrics registry.
+
+#### `Counter`, `Gauge`, `Histogram`
+Metrics collection classes.
+
+#### `performHealthCheck()`
+Check logger system health.
+
+#### `healthCheckMiddleware()`
+Express middleware for health checks.
+
+### Testing APIs
+
+#### `createMockLogger()`
+Create mock logger for testing.
+
+**Returns:** `MockLogger` - Mock logger with `.calls`, `.clear()`, `.getLastCall()` methods
+
+#### `createLoggerSpy()`
+Create logger spy with additional utilities.
+
+#### `createIsolatedMockLogger()`
+Create logger with built-in assertions.
+
+### Configuration APIs
+
+#### `getLoggerConfig()`
+Get default logger configuration.
+
+#### `LogLevel`
+Enum: `error`, `warn`, `info`, `http`, `debug`
+
+#### Logger Configuration Types
+
+```typescript
+interface LoggerConfig {
+  level: LogLevel;
+  loki?: LokiConfig;
+  file?: FileConfig;
+  console?: ConsoleConfig;
+  samplingRate?: number;
+  batchSize?: number;
+  // ... more options
+}
+```
+
+### Builder Pattern
+
+#### `LoggerBuilder`
+Fluent API for logger construction.
+
+```typescript
+const logger = LoggerBuilder
+  .console('my-app')
+  .withLoki({ host: 'localhost', port: 3100 })
+  .withLevel('debug')
+  .build();
+```
+
+### Error Handling
+
+#### `retryWithBackoff(fn, config?)`
+Retry function with exponential backoff.
+
+#### `safeAsync(fn, fallback?)`
+Wrap async function with error handling.
+
+#### `CircuitBreaker`
+Circuit breaker for resilient operations.
+
+### Console Capture
+
+#### `captureConsole(options?)`
+Capture console.log/warn/error calls.
+
+#### `restoreConsole()`
+Restore original console methods.
 
 ## Production Recommendations
 
