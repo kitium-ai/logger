@@ -4,13 +4,13 @@
  */
 
 import {
-  MockLogger,
-  createMockLogger,
-  createMockLoggerWithContext,
-  createLoggerSpy,
   createIsolatedMockLogger,
-  MockLoggerFactory,
+  createLoggerSpy,
+  createMockLogger,
   createMockLoggerFactory,
+  createMockLoggerWithContext,
+  MockLogger,
+  MockLoggerFactory,
 } from '../mock-logger';
 
 describe('MockLogger', () => {
@@ -38,7 +38,7 @@ describe('MockLogger', () => {
 
       const call = logger.getLastCall();
       expect(call?.message).toBe('User logged in');
-      expect(call?.meta).toEqual(metadata);
+      expect(call?.meta).toStrictEqual(metadata);
       expect(call?.level).toBe('info');
     });
 
@@ -60,16 +60,19 @@ describe('MockLogger', () => {
       });
 
       expect(result).toBe('done');
-      expect(logger.calls[0].context?.traceId).toBe('abc-123');
+      const firstCall = logger.calls[0];
+      expect(firstCall).toBeDefined();
+      expect(firstCall?.context?.traceId).toBe('abc-123');
     });
 
     it('should create child loggers', () => {
-      const child = logger.child({ component: 'auth' });
+      const child = logger.child({ component: 'auth' }) as MockLogger;
       child.info('Child message', { userId: 456 });
 
       const call = child.calls[0];
-      expect(call.message).toBe('Child message');
-      expect(call.meta).toEqual({ component: 'auth', userId: 456 });
+      expect(call).toBeDefined();
+      expect(call?.message).toBe('Child message');
+      expect(call?.meta).toStrictEqual({ component: 'auth', userId: 456 });
     });
   });
 
@@ -90,10 +93,10 @@ describe('MockLogger', () => {
     });
 
     it('should find calls by message content', () => {
-      const dbCalls = logger.findCallsByMessage('database');
+      const databaseCalls = logger.findCallsByMessage('database');
       const userCalls = logger.findCallsByMessage('user');
 
-      expect(dbCalls).toHaveLength(1);
+      expect(databaseCalls).toHaveLength(1);
       expect(userCalls).toHaveLength(1);
     });
 
@@ -119,7 +122,9 @@ describe('createMockLoggerWithContext', () => {
 
     logger.info('Test message');
 
-    expect(logger.calls[0].context).toEqual({
+    const firstCall = logger.calls[0];
+    expect(firstCall).toBeDefined();
+    expect(firstCall?.context).toStrictEqual({
       traceId: 'test-123',
       userId: 'user-456',
     });
@@ -211,7 +216,12 @@ describe('Usage Examples', () => {
   it('should be used for testing services', () => {
     // Example of how to test a service that uses logging
     class UserService {
-      constructor(private logger: { info: (msg: string) => void; error: (msg: string) => void }) {}
+      constructor(
+        private readonly logger: {
+          info: (message: string) => void;
+          error: (message: string) => void;
+        }
+      ) {}
 
       authenticate(username: string, password: string): boolean {
         this.logger.info(`Attempting authentication for ${username}`);

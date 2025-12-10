@@ -289,7 +289,7 @@ export class InMemoryLogger implements ILogger {
    * Get context ID field value
    */
   private getContextIdFieldValue(log: LogEntry, caseSensitive: boolean): string {
-    let fieldValue = log.contextId || '';
+    let fieldValue = log.contextId ?? '';
     if (!caseSensitive) {
       fieldValue = fieldValue.toLowerCase();
     }

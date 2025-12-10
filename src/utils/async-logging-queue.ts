@@ -55,9 +55,9 @@ export class AsyncLoggingQueue extends EventEmitter {
   private deadLetterQueue: LogEntry[] = [];
   private processing = false;
   private isShutdown = false;
-  private flushTimer?: NodeJS.Timeout;
-  private retryTimer?: NodeJS.Timeout;
-  private metricsTimer?: NodeJS.Timeout;
+  private flushTimer: NodeJS.Timeout | undefined;
+  private retryTimer: NodeJS.Timeout | undefined;
+  private metricsTimer: NodeJS.Timeout | undefined;
   private readonly stats = {
     queued: 0,
     processed: 0,
@@ -248,7 +248,7 @@ export class AsyncLoggingQueue extends EventEmitter {
    * Handle failed entry with guaranteed delivery logic
    */
   private handleFailedEntry(entry: LogEntry): void {
-    const retryCount = (entry.retryCount || 0) + 1;
+    const retryCount = (entry.retryCount ?? 0) + 1;
 
     if (retryCount >= this.config.maxRetries) {
       // Move to dead letter queue
@@ -271,7 +271,7 @@ export class AsyncLoggingQueue extends EventEmitter {
    * Move entry to retry queue
    */
   private moveToRetryQueue(entry: LogEntry): void {
-    entry.retryCount = (entry.retryCount || 0) + 1;
+    entry.retryCount = (entry.retryCount ?? 0) + 1;
     const backoffDelay = Math.min(
       this.config.retryDelay * this.config.retryBackoffMultiplier ** (entry.retryCount - 1),
       this.config.maxRetryDelay
@@ -305,7 +305,7 @@ export class AsyncLoggingQueue extends EventEmitter {
 
     // Find entries ready for retry
     this.retryQueue = this.retryQueue.filter((entry) => {
-      if ((entry.nextRetryTime || 0) <= now) {
+      if ((entry.nextRetryTime ?? 0) <= now) {
         readyEntries.push(entry);
         return false;
       }
@@ -396,7 +396,7 @@ export class AsyncLoggingQueue extends EventEmitter {
 
       // Load dead letter queue
       const dlqPath =
-        this.config.deadLetterQueuePath || `${this.config.persistencePath}/dead-letter-queue.json`;
+        this.config.deadLetterQueuePath ?? `${this.config.persistencePath}/dead-letter-queue.json`;
       if (this.isValidFilePath(dlqPath) && existsSync(dlqPath)) {
         const dlqData = readFileSync(dlqPath, 'utf8');
         this.deadLetterQueue = JSON.parse(dlqData);
@@ -427,7 +427,7 @@ export class AsyncLoggingQueue extends EventEmitter {
 
         // Persist dead letter queue
         const dlqPath =
-          this.config.deadLetterQueuePath ||
+          this.config.deadLetterQueuePath ??
           `${this.config.persistencePath}/dead-letter-queue.json`;
         if (this.isValidFilePath(dlqPath)) {
           writeFileSync(dlqPath, JSON.stringify(this.deadLetterQueue));

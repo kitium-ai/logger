@@ -257,14 +257,28 @@ export function setupLoggerMatchers(): void {
   }
 }
 
-// Type declarations for the custom matchers
-declare module 'expect' {
-  type Matchers<R> = {
-    toHaveLogged(level?: string): R;
-    toHaveLoggedMessage(message: string, level?: string): R;
-    toHaveLoggedLevel(level: string): R;
-  };
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
+// Type declarations for the custom matchers (Jest/Vitest)
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toHaveLogged(level?: string): R;
+      toHaveLoggedMessage(message: string, level?: string): R;
+      toHaveLoggedLevel(level: string): R;
+    }
+  }
+
+  namespace Vi {
+    interface Assertion {
+      toHaveLogged(level?: string): void;
+      toHaveLoggedMessage(message: string, level?: string): void;
+      toHaveLoggedLevel(level: string): void;
+    }
+  }
 }
+/* eslint-enable @typescript-eslint/consistent-type-definitions */
+
+export {};
 
 /**
  * Helper to create isolated logger instances for parallel tests

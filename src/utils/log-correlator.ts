@@ -82,7 +82,7 @@ export class LogCorrelator {
     if (!correlation) {
       correlation = {
         correlationId,
-        traceId: entry.contextId || correlationId,
+        traceId: entry.contextId ?? correlationId,
         entries: [],
         startTime: entry.timestamp,
         endTime: entry.timestamp,
@@ -130,7 +130,7 @@ export class LogCorrelator {
    * Get correlation data for a specific ID
    */
   getCorrelation(correlationId: string): LogCorrelation | null {
-    return this.correlations.get(correlationId) || null;
+    return this.correlations.get(correlationId) ?? null;
   }
 
   /**
@@ -261,18 +261,20 @@ export class LogCorrelator {
     > = {};
 
     for (const entry of correlation.entries) {
-      const operation = this.extractOperation(entry) || 'unknown';
-      const service = this.extractService(entry) || 'unknown';
+      const operation = this.extractOperation(entry) ?? 'unknown';
+      const service = this.extractService(entry) ?? 'unknown';
 
-      if (!Object.prototype.hasOwnProperty.call(operationStats, operation)) {
-        operationStats[operation] = { durations: [], services: new Set(), count: 0 };
+      let stats = operationStats[operation];
+      if (!stats) {
+        stats = { durations: [], services: new Set(), count: 0 };
+        operationStats[operation] = stats;
       }
 
-      operationStats[operation].count++;
-      operationStats[operation].services.add(service);
+      stats.count++;
+      stats.services.add(service);
 
       if (entry.timestamp) {
-        operationStats[operation].durations.push(entry.timestamp);
+        stats.durations.push(entry.timestamp);
       }
     }
 
@@ -332,18 +334,20 @@ export class LogCorrelator {
     for (const entry of correlation.entries) {
       if (entry.level === 'error' || entry.level === 'warn') {
         const message = entry.message.toLowerCase();
-        const service = this.extractService(entry) || 'unknown';
+        const service = this.extractService(entry) ?? 'unknown';
 
         // Group similar errors
         const pattern = this.normalizeErrorMessage(message);
 
-        if (!Object.prototype.hasOwnProperty.call(errorGroups, pattern)) {
-          errorGroups[pattern] = { count: 0, services: new Set(), timestamps: [] };
+        let group = errorGroups[pattern];
+        if (!group) {
+          group = { count: 0, services: new Set<string>(), timestamps: [] };
+          errorGroups[pattern] = group;
         }
 
-        errorGroups[pattern].count++;
-        errorGroups[pattern].services.add(service);
-        errorGroups[pattern].timestamps.push(entry.timestamp);
+        group.count++;
+        group.services.add(service);
+        group.timestamps.push(entry.timestamp);
       }
     }
 

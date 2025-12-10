@@ -203,7 +203,7 @@ export class PriorityBasedSamplingStrategy implements SamplingStrategy {
     }
 
     // Priority-based sampling
-    const priority = this.priorityLevels.get(entry.level) || 0;
+    const priority = this.priorityLevels.get(entry.level) ?? 0;
     const baseSamplingRate = this.calculateBaseRate(priority);
 
     // Adjust based on service-specific factors
@@ -433,7 +433,7 @@ export class SamplingStrategyManager {
   }
 
   getStats(): SamplingStats | null {
-    return this.activeStrategy?.getStats() || null;
+    return this.activeStrategy?.getStats() ?? null;
   }
 
   getAvailableStrategies(): string[] {

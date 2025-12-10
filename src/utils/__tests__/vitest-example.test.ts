@@ -1,16 +1,21 @@
 /**
- * Example of using Mock Logger with Vitest
+ * Example of using Mock Logger with Jest/Vitest
  * This shows how consumers can easily test services that use the logger
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { createMockLogger, MockLogger } from '../mock-logger';
+import { createMockLogger, type MockLogger } from '../mock-logger';
 
 // Example service that uses logging
 class UserService {
-  constructor(private logger: { info: (msg: string, meta?: any) => void; error: (msg: string, meta?: any, error?: Error) => void }) {}
+  constructor(
+    private readonly logger: {
+      info: (message: string, meta?: Record<string, unknown>) => void;
+      error: (message: string, meta?: Record<string, unknown>, error?: Error) => void;
+    }
+  ) {}
 
   async createUser(email: string, password: string): Promise<{ id: string; email: string } | null> {
+    await Promise.resolve();
     this.logger.info('Creating user', { email });
 
     // Simulate some business logic
@@ -27,6 +32,7 @@ class UserService {
   }
 
   async login(email: string, password: string): Promise<boolean> {
+    await Promise.resolve();
     this.logger.info('Login attempt', { email });
 
     // Simulate authentication
@@ -53,9 +59,9 @@ describe('UserService with Mock Logger', () => {
     it('should create user successfully', async () => {
       const result = await service.createUser('john@example.com', 'password123');
 
-      expect(result).toEqual({
+      expect(result).toStrictEqual({
         id: 'user-123',
-        email: 'john@example.com'
+        email: 'john@example.com',
       });
 
       // Verify logging
@@ -74,9 +80,11 @@ describe('UserService with Mock Logger', () => {
       // Verify error logging
       const errorCalls = logger.getCallsByLevel('error');
       expect(errorCalls).toHaveLength(1);
-      expect(errorCalls[0].message).toBe('Password too short');
-      expect(errorCalls[0].error?.message).toBe('Validation failed');
-      expect(errorCalls[0].meta).toEqual({ email: 'john@example.com' });
+      const firstError = errorCalls[0];
+      expect(firstError).toBeDefined();
+      expect(firstError?.message).toBe('Password too short');
+      expect(firstError?.error?.message).toBe('Validation failed');
+      expect(firstError?.meta).toStrictEqual({ email: 'john@example.com' });
     });
   });
 

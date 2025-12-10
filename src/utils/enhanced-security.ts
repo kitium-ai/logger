@@ -34,17 +34,24 @@ export type AuditEntry = {
 };
 
 export class EnhancedSecurityManager {
-  private readonly config: SecurityConfig;
+  private readonly _config: SecurityConfig;
 
   constructor(config: SecurityConfig) {
-    this.config = config;
+    this._config = config;
+  }
+
+  /**
+   * Expose configuration safely for read-only consumption
+   */
+  get config(): SecurityConfig {
+    return this._config;
   }
 
   /**
    * Detect PII in data object
    */
   detectPII(data: unknown): PIIDetectionResult {
-    if (!this.config.enablePIIDetection) {
+    if (!this._config.enablePIIDetection) {
       return {
         hasPII: false,
         piiFields: [],
@@ -84,7 +91,7 @@ export class EnhancedSecurityManager {
    * Sanitize data by removing or masking PII
    */
   sanitizeData(data: unknown): unknown {
-    if (!this.config.enablePIIDetection) {
+    if (!this._config.enablePIIDetection) {
       return data;
     }
 
@@ -116,8 +123,8 @@ export class EnhancedSecurityManager {
     );
 
     // Add cryptographic signature if enabled
-    if (this.config.enableAuditSigning && this.config.auditKey) {
-      entry.signature = this.signAuditEntry(entry, this.config.auditKey);
+    if (this._config.enableAuditSigning && this._config.auditKey) {
+      entry.signature = this.signAuditEntry(entry, this._config.auditKey);
     }
 
     return entry;
@@ -142,8 +149,8 @@ export class EnhancedSecurityManager {
     }
 
     // Verify signature if present
-    if (entry.signature && this.config.auditKey) {
-      return this.verifySignature(entry, this.config.auditKey);
+    if (entry.signature && this._config.auditKey) {
+      return this.verifySignature(entry, this._config.auditKey);
     }
 
     return true;
@@ -153,11 +160,11 @@ export class EnhancedSecurityManager {
    * Encrypt sensitive log data
    */
   encryptData(data: string): string {
-    if (!this.config.enableEncryption || !this.config.encryptionKey) {
+    if (!this._config.enableEncryption || !this._config.encryptionKey) {
       return data;
     }
 
-    const encryptionKey = this.config.encryptionKey;
+    const encryptionKey = this._config.encryptionKey;
 
     // Simple encryption for demonstration - in production use proper encryption
     const cipher = createHash('sha256');
@@ -169,7 +176,7 @@ export class EnhancedSecurityManager {
     let encrypted = '';
     for (let index = 0; index < data.length; index++) {
       // eslint-disable-next-line no-bitwise
-      encrypted += String.fromCharCode(data.charCodeAt(index) ^ (key[index % key.length] || 0));
+      encrypted += String.fromCharCode(data.charCodeAt(index) ^ (key[index % key.length] ?? 0));
     }
 
     return Buffer.from(encrypted, 'binary').toString('base64');
@@ -179,11 +186,11 @@ export class EnhancedSecurityManager {
    * Decrypt sensitive log data
    */
   decryptData(encryptedData: string): string {
-    if (!this.config.enableEncryption || !this.config.encryptionKey) {
+    if (!this._config.enableEncryption || !this._config.encryptionKey) {
       return encryptedData;
     }
 
-    const encryptionKey = this.config.encryptionKey;
+    const encryptionKey = this._config.encryptionKey;
 
     // Corresponding decryption
     const key = createHash('sha256').update(encryptionKey).digest();
@@ -192,7 +199,7 @@ export class EnhancedSecurityManager {
     let decrypted = '';
     for (let index = 0; index < encrypted.length; index++) {
       decrypted += String.fromCharCode(
-        encrypted.charCodeAt(index) ^ (key[index % key.length] || 0)
+        encrypted.charCodeAt(index) ^ (key[index % key.length] ?? 0)
       );
     }
 
@@ -241,7 +248,7 @@ export class EnhancedSecurityManager {
   }
 
   private isPIIField(fieldName: string): boolean {
-    return PIIPatterns.isSensitiveField(fieldName, this.config.piiFields);
+    return PIIPatterns.isSensitiveField(fieldName, this._config.piiFields);
   }
 
   private containsPIIPattern(value: string): boolean {
@@ -252,7 +259,7 @@ export class EnhancedSecurityManager {
   private maskPII(data: unknown): unknown {
     // Use centralized sanitization logic
     return PIIPatterns.sanitizeObject(data, {
-      sensitiveFields: this.config.piiFields,
+      sensitiveFields: this._config.piiFields,
       redactionText: '[REDACTED]',
       deep: true,
     });

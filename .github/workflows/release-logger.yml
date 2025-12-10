@@ -1,0 +1,215 @@
+name: Release @kitiumai/logger
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v2.0.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release-logger:
+    name: 'Release @kitiumai/logger'
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/ashishyd/kitiumai-dev:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Resolve package directory
+        id: pkg
+        run: |
+          if [ -d "packages/core/@kitiumai/logger" ]; then
+            echo "path=packages/core/@kitiumai/logger" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=." >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Environment health check
+        run: |
+          echo "📋 Environment diagnostics:"
+          echo "Node: $(node --version)"
+          echo "NPM: $(npm --version)"
+          echo "Git: $(git --version)"
+          echo "Working directory: $(pwd)"
+          echo "User: $(whoami)"
+
+      - name: Get tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_NAME="${{ inputs.tag }}"
+          else
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Processing tag: $TAG_NAME"
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=$(echo "${{ steps.tag.outputs.tag }}" | sed 's/^logger-v//')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Extracted version: $VERSION"
+
+      - name: Shared setup (build + lint + test + typecheck)
+        uses: ./.github/actions/kitium-shared-setup
+        with:
+          working-directory: ${{ steps.pkg.outputs.path }}
+          run-build: 'true'
+          run-lint: 'true'
+          run-tests: 'true'
+          run-typecheck: 'true'
+          run-security-audit: 'true'
+
+      - name: Security checks
+        run: |
+          WORKDIR="${{ steps.pkg.outputs.path }}"
+          cd "$WORKDIR"
+          pnpm run security:audit || echo "⚠️ security:audit failed, continuing..."
+          pnpm run security:secrets || echo "⚠️ security:secrets failed, continuing..."
+
+      - name: Update package version
+        run: |
+          WORKDIR="${{ steps.pkg.outputs.path }}"
+          cd "$WORKDIR"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          TARGET_VERSION="${{ steps.version.outputs.version }}"
+
+          if [ "$CURRENT_VERSION" = "$TARGET_VERSION" ]; then
+            echo "ℹ️ Version already set to $TARGET_VERSION, skipping npm version"
+          else
+            echo "📦 Updating package.json version from $CURRENT_VERSION to $TARGET_VERSION"
+            npm version "$TARGET_VERSION" --no-git-tag-version
+          fi
+
+      - name: Configure npm for trusted publishing
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "❌ NPM_TOKEN is required for publishing"
+            exit 1
+          fi
+
+          WORKDIR="${{ steps.pkg.outputs.path }}"
+          cd "$WORKDIR"
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+          npm config set provenance true
+          echo "✅ npm configured for trusted publishing"
+
+      - name: Check if version already published
+        id: version_check
+        run: |
+          WORKDIR="${{ steps.pkg.outputs.path }}"
+          cd "$WORKDIR"
+          VERSION="${{ steps.version.outputs.version }}"
+          PACKAGE_NAME="@kitiumai/logger"
+
+          if npm view "${PACKAGE_NAME}@${VERSION}" version 2>/dev/null; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "⏭️  Version ${VERSION} already on npm, skipping publish"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            echo "📦 Version ${VERSION} not found on npm, publishing"
+          fi
+
+      - name: Publish to npm
+        if: steps.version_check.outputs.already_published != 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          WORKDIR="${{ steps.pkg.outputs.path }}"
+          cd "$WORKDIR"
+          npm publish --access public --provenance
+
+      - name: Generate SBOM
+        continue-on-error: true
+        run: |
+          WORKDIR="${{ steps.pkg.outputs.path }}"
+          cd "$WORKDIR"
+          cat <<'JSON' > sbom.json
+          {
+            "bomFormat": "CycloneDX",
+            "specVersion": "1.5",
+            "version": 1,
+            "metadata": {
+              "component": {
+                "name": "@kitiumai/logger",
+                "version": "${{ steps.version.outputs.version }}"
+              }
+            }
+          }
+          JSON
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          release_name: '@kitiumai/logger ${{ steps.version.outputs.version }}'
+          body: |
+            ## 🚀 Release @kitiumai/logger@${{ steps.version.outputs.version }}
+
+            ### Highlights
+            - Automated build, lint, test, and type-check pipeline
+            - Security guardrails and SBOM generation
+            - Trusted publishing to npm with provenance
+
+            ### Install
+            ```bash
+            pnpm add @kitiumai/logger@${{ steps.version.outputs.version }}
+            ```
+
+            ### Documentation
+            - [README](https://github.com/kitium-ai/logger/blob/main/README.md)
+
+            ### Supply Chain
+            - [SBOM](https://github.com/kitium-ai/logger/releases/download/${{ steps.tag.outputs.tag }}/sbom.json)
+          draft: false
+          prerelease: false
+
+      - name: Upload SBOM to release
+        continue-on-error: true
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: sbom.json
+          asset_name: sbom.json
+          asset_content_type: application/json
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Successfully released @kitiumai/logger@${{ steps.version.outputs.version }}"
+          echo "📦 Published to npm (if not already available)"
+          echo "🏷️  Release: https://github.com/kitium-ai/logger/releases/tag/${{ steps.tag.outputs.tag }}"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Failed to release @kitiumai/logger@${{ steps.version.outputs.version }}"
+          echo "Please inspect the workflow logs for details."

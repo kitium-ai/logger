@@ -34,7 +34,7 @@ export type TransportEndpoint = {
 export class TransportHealthMonitor extends EventEmitter {
   private readonly transports = new Map<string, TransportEndpoint>();
   private readonly healthStatus = new Map<string, TransportHealthStatus>();
-  private healthCheckTimer?: NodeJS.Timeout;
+  private healthCheckTimer: NodeJS.Timeout | undefined;
   private primaryTransport?: string;
   private failoverTransport?: string;
 

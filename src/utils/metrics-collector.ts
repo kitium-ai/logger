@@ -251,7 +251,7 @@ export class MetricsCollector extends EventEmitter {
     const trends = this.calculateTrends(recent);
 
     return {
-      current: this.lastMetrics || null,
+      current: this.lastMetrics ?? null,
       averages,
       alerts: [...this.alerts],
       trends,
@@ -341,9 +341,9 @@ export class MetricsCollector extends EventEmitter {
         break;
       case 'histogram':
         this.histograms.set(definition.name, {
-          buckets: definition.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+          buckets: definition.buckets ?? [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
           counts: new Array(
-            (definition.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10])
+            (definition.buckets ?? [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10])
               .length + 1
           ).fill(0),
           sum: 0,
@@ -362,7 +362,7 @@ export class MetricsCollector extends EventEmitter {
       throw new Error(`Counter metric '${name}' not registered or wrong type`);
     }
 
-    const current = this.counters.get(name) || 0;
+    const current = this.counters.get(name) ?? 0;
     this.counters.set(name, current + value);
 
     this.recordCustomValue(name, current + value, labels);
@@ -428,10 +428,10 @@ export class MetricsCollector extends EventEmitter {
       let value = 0;
       switch (definition.type) {
         case 'counter':
-          value = this.counters.get(name) || 0;
+          value = this.counters.get(name) ?? 0;
           break;
         case 'gauge':
-          value = this.gauges.get(name) || 0;
+          value = this.gauges.get(name) ?? 0;
           break;
         case 'histogram': {
           const histogram = this.histograms.get(name);
@@ -446,7 +446,7 @@ export class MetricsCollector extends EventEmitter {
       result[name] = {
         value,
         type: definition.type,
-        labels: definition.labels || {},
+        labels: definition.labels ?? {},
       };
     }
 
@@ -457,7 +457,7 @@ export class MetricsCollector extends EventEmitter {
    * Get custom metric values for a time range
    */
   getCustomMetricsRange(name: string, startTime: number, endTime: number): CustomMetricValue[] {
-    const values = this.customValues.get(name) || [];
+    const values = this.customValues.get(name) ?? [];
     return values.filter((v) => v.timestamp >= startTime && v.timestamp <= endTime);
   }
 
@@ -487,7 +487,7 @@ export class MetricsCollector extends EventEmitter {
       name,
       value,
       timestamp: Date.now(),
-      labels: labels || {},
+      labels: labels ?? {},
     };
 
     if (!this.customValues.has(name)) {
