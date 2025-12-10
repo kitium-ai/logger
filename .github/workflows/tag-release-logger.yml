@@ -72,7 +72,7 @@ jobs:
       - name: Check if tag already exists
         id: check_tag
         run: |
-          TAG="logger-v${{ inputs.version }}"
+          TAG="v${{ inputs.version }}"
           if git tag -l | grep -q "^$TAG$"; then
             echo "❌ Tag $TAG already exists"
             echo "exists=true" >> "$GITHUB_OUTPUT"
@@ -125,7 +125,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TARGET_VERSION="${{ inputs.version }}"
-          BRANCH_NAME="release/logger-v$TARGET_VERSION"
+          BRANCH_NAME="release/v$TARGET_VERSION"
           PKG_PATH="${{ steps.pkg.outputs.path }}/package.json"
 
           git checkout -b "$BRANCH_NAME"
@@ -157,7 +157,7 @@ jobs:
       - name: Create and push tag
         if: steps.version_check.outputs.needs_update == 'false'
         run: |
-          TAG="logger-v${{ inputs.version }}"
+          TAG="v${{ inputs.version }}"
           echo "🏷️  Creating tag: $TAG"
           git tag "$TAG"
           git push origin "$TAG"
@@ -165,7 +165,7 @@ jobs:
       - name: Verify tag creation
         if: steps.version_check.outputs.needs_update == 'false'
         run: |
-          TAG="logger-v${{ inputs.version }}"
+          TAG="v${{ inputs.version }}"
           echo "✅ Tag created successfully: $TAG"
           echo "🔗 Tag URL: https://github.com/kitium-ai/logger/releases/tag/$TAG"
           echo "The release workflow will be triggered automatically."
