@@ -3,6 +3,8 @@
  * Performance monitoring, throughput tracking, and alerting
  */
 
+import { EventEmitter } from 'events';
+
 import type { AsyncQueueStats } from './async-logging-queue';
 
 export type MetricsConfig = {

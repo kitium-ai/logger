@@ -494,7 +494,7 @@ export class AsyncLoggingQueue extends EventEmitter {
       const entry = this.deadLetterQueue.shift();
       if (entry) {
         entry.retryCount = 0; // Reset retry count
-        entry.nextRetryTime = undefined;
+        entry.nextRetryTime = 0;
         this.queue.push(entry);
         requeued.push(entry);
       }

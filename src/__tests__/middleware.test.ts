@@ -251,8 +251,10 @@ describe('Express Middleware', () => {
     });
 
     it('should handle request with user ID header', (done) => {
-      const userExtractor = (request: Request): string | string[] | undefined =>
-        request.get('x-user-id');
+      const userExtractor = (request: Request): string | undefined => {
+        const userHeader = request.get('x-user-id');
+        return Array.isArray(userHeader) ? userHeader[0] : userHeader;
+      };
 
       const middleware = userContextMiddleware(userExtractor);
       mockNext.mockImplementation(() => {

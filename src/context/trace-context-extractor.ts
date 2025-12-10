@@ -86,11 +86,17 @@ export class TraceContextExtractor {
     if (parts.length < 2) {
       return null;
     }
-    return {
-      traceId: parts[0] || undefined,
-      spanId: parts[1] || undefined,
-      parentSpanId: parts[2] || undefined,
-    };
+    const result: IncomingTraceContext = {};
+    if (parts[0]) {
+      result.traceId = parts[0];
+    }
+    if (parts[1]) {
+      result.spanId = parts[1];
+    }
+    if (parts[2]) {
+      result.parentSpanId = parts[2];
+    }
+    return result;
   }
 
   /**

@@ -45,10 +45,10 @@ export class CentralLogger implements ILogger {
   private readonly config: LoggerConfig;
   private lokiFailureCount = 0;
   private lokiCircuitOpen = false;
-  private readonly asyncQueue: AsyncLoggingQueue;
-  private readonly healthMonitor: TransportHealthMonitor;
-  private readonly securityManager: EnhancedSecurityManager;
-  private readonly metricsCollector: MetricsCollector;
+  private asyncQueue!: AsyncLoggingQueue;
+  private healthMonitor!: TransportHealthMonitor;
+  private securityManager!: EnhancedSecurityManager;
+  private metricsCollector!: MetricsCollector;
 
   private initializeAsyncQueue(): void {
     const queueConfig: AsyncQueueConfig = {

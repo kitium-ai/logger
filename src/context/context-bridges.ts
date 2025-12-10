@@ -41,7 +41,14 @@ function extractTraceIds(headers: HeaderSource): { traceId?: string; spanId?: st
       (readHeader(headers, 'x-b3-spanid') as string | undefined) ??
       (readHeader(headers, 'x-span-id') as string | undefined)
   );
-  return { traceId, spanId };
+  const result: { traceId?: string; spanId?: string } = {};
+  if (traceId) {
+    result.traceId = traceId;
+  }
+  if (spanId) {
+    result.spanId = spanId;
+  }
+  return result;
 }
 
 function extractContextIdentifiers(headers: HeaderSource): {
@@ -50,12 +57,29 @@ function extractContextIdentifiers(headers: HeaderSource): {
   correlationId?: string;
   requestId?: string;
 } {
-  return {
-    userId: readHeader(headers, 'x-user-id'),
-    sessionId: readHeader(headers, 'x-session-id'),
-    correlationId: readHeader(headers, 'x-correlation-id'),
-    requestId: readHeader(headers, 'x-request-id'),
-  };
+  const result: {
+    userId?: string;
+    sessionId?: string;
+    correlationId?: string;
+    requestId?: string;
+  } = {};
+  const userId = readHeader(headers, 'x-user-id');
+  const sessionId = readHeader(headers, 'x-session-id');
+  const correlationId = readHeader(headers, 'x-correlation-id');
+  const requestId = readHeader(headers, 'x-request-id');
+  if (userId) {
+    result.userId = userId;
+  }
+  if (sessionId) {
+    result.sessionId = sessionId;
+  }
+  if (correlationId) {
+    result.correlationId = correlationId;
+  }
+  if (requestId) {
+    result.requestId = requestId;
+  }
+  return result;
 }
 
 function setContextFieldIfPresent<K extends keyof LogContext>(
@@ -103,9 +127,36 @@ export function bridgeHeadersToContext(
   headers: HeaderSource,
   overrides: Partial<LogContext> = {}
 ): LogContext {
-  const { traceId, spanId } = extractTraceIds(headers);
+  const traceIds = extractTraceIds(headers);
   const identifiers = extractContextIdentifiers(headers);
-  const contextData = buildContextData({ traceId, spanId, ...identifiers }, overrides);
+  const extracted: {
+    traceId?: string;
+    spanId?: string;
+    userId?: string;
+    sessionId?: string;
+    correlationId?: string;
+    requestId?: string;
+  } = {};
+  if (traceIds.traceId) {
+    extracted.traceId = traceIds.traceId;
+  }
+  if (traceIds.spanId) {
+    extracted.spanId = traceIds.spanId;
+  }
+  if (identifiers.userId) {
+    extracted.userId = identifiers.userId;
+  }
+  if (identifiers.sessionId) {
+    extracted.sessionId = identifiers.sessionId;
+  }
+  if (identifiers.correlationId) {
+    extracted.correlationId = identifiers.correlationId;
+  }
+  if (identifiers.requestId) {
+    extracted.requestId = identifiers.requestId;
+  }
+
+  const contextData = buildContextData(extracted, overrides);
 
   return contextManager.initContext(contextData);
 }
@@ -125,20 +176,20 @@ export function bridgeNextRequest(headers: HeaderSource): LogContext {
   return contextManager.run(context, () => contextManager.getContext());
 }
 
-function getValidTraceId(spanContext_: { traceId?: string }): string | undefined {
+function getValidTraceId(spanContext_?: { traceId?: string }): { traceId?: string } {
   const traceId = spanContext_?.traceId;
   if (traceId && traceId !== '0'.repeat(32)) {
-    return traceId;
+    return { traceId };
   }
-  return undefined;
+  return {};
 }
 
-function getValidSpanId(spanContext_: { spanId?: string }): string | undefined {
+function getValidSpanId(spanContext_?: { spanId?: string }): { spanId?: string } {
   const spanId = spanContext_?.spanId;
   if (spanId && spanId !== '0'.repeat(16)) {
-    return spanId;
+    return { spanId };
   }
-  return undefined;
+  return {};
 }
 
 function extractSpanContext(otelContext_: OtelContext = otelContext.active()): {
@@ -150,11 +201,18 @@ function extractSpanContext(otelContext_: OtelContext = otelContext.active()): {
   const span = api?.trace?.getSpan?.(otelContext_);
   const spanContext = span?.spanContext?.();
 
-  const traceId = getValidTraceId(spanContext || {});
-  const spanId = getValidSpanId(spanContext || {});
+  const traceIdResult = getValidTraceId(spanContext);
+  const spanIdResult = getValidSpanId(spanContext);
   const sampled = spanContext?.traceFlags === 1;
 
-  return { traceId, spanId, sampled };
+  const result: { traceId?: string; spanId?: string; sampled: boolean } = { sampled };
+  if (traceIdResult.traceId) {
+    result.traceId = traceIdResult.traceId;
+  }
+  if (spanIdResult.spanId) {
+    result.spanId = spanIdResult.spanId;
+  }
+  return result;
 }
 
 export function bridgeOpenTelemetryContext(
