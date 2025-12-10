@@ -105,6 +105,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
 
     it('should handle GET requests', (done) => {
@@ -114,6 +116,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
 
     it('should handle POST requests', (done) => {
@@ -124,6 +128,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
 
     it('should handle errors in next middleware', (done) => {
@@ -134,7 +140,7 @@ describe('Express Middleware', () => {
 
       expect(() => {
         middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
-      }).toThrow();
+      }).toThrow('Test error');
       done();
     });
   });
@@ -152,6 +158,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
 
     it('should handle slow requests', (done) => {
@@ -161,6 +169,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
   });
 
@@ -189,6 +199,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
 
     it('should work with default sensitive fields', (done) => {
@@ -198,6 +210,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
 
     it('should handle requests without body', (done) => {
@@ -208,6 +222,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
   });
 
@@ -238,6 +254,9 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
+      expect(extractor).toHaveBeenCalled();
     });
 
     it('should handle extractor returning undefined', (done) => {
@@ -248,12 +267,18 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
+      expect(extractor).toHaveBeenCalled();
     });
 
     it('should handle request with user ID header', (done) => {
       const userExtractor = (request: Request): string | undefined => {
         const userHeader = request.get('x-user-id');
-        return Array.isArray(userHeader) ? userHeader[0] : userHeader;
+        if (Array.isArray(userHeader)) {
+          return userHeader[0];
+        }
+        return userHeader;
       };
 
       const middleware = userContextMiddleware(userExtractor);
@@ -262,6 +287,8 @@ describe('Express Middleware', () => {
       });
 
       middleware(mockRequest as Request, mockResponse as Response, mockNext as NextFunction);
+
+      expect(mockNext).toHaveBeenCalled();
     });
   });
 

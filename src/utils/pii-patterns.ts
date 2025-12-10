@@ -36,10 +36,11 @@ export const SENSITIVE_FIELDS = [
 export const SENSITIVE_VALUE_PATTERNS = {
   bearer: /bearer\s+[a-z0-9.-_]+/i,
   jwt: /\beyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b/,
-  creditCard: /\b(?:\d[ -]*?){13,16}\b/,
+  creditCard: /\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{0,4}\b/,
   accessToken: /\b[A-Fa-f0-9]{64}\b/,
   email: /[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}/g,
-  phone: /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g,
+  phone:
+    /\+\d{1,3}[-.\s]?\d{3}[-.\s]?\d{3}[-.\s]?\d{4}|\(\d{3}\)\s*\d{3}[-.\s]?\d{4}|\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g,
   ssn: /\b\d{3}-\d{2}-\d{4}\b/g,
   uuid: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
   ipv4: /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g,

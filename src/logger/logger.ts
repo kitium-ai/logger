@@ -128,9 +128,10 @@ export class CentralLogger implements ILogger {
       {
         name: 'console',
         url: 'console://stdout',
-        healthCheck: async () => true,
+        healthCheck: async () => await Promise.resolve(true),
         send: async (data) => {
           // Console transport is handled by Winston
+          await Promise.resolve();
           this.logger.info('Health check data', data as unknown);
         },
       },
@@ -154,6 +155,7 @@ export class CentralLogger implements ILogger {
         },
         send: async (data) => {
           // File transport is handled by Winston
+          await Promise.resolve();
           this.logger.info('File transport data', data as unknown);
         },
       });
@@ -180,6 +182,7 @@ export class CentralLogger implements ILogger {
         },
         send: async (data) => {
           // Loki transport is handled by Winston
+          await Promise.resolve();
           this.logger.info('Loki transport data', data as unknown);
         },
       });
@@ -532,13 +535,13 @@ export class CentralLogger implements ILogger {
    */
   private encryptSensitiveFields(data: unknown): unknown {
     if (
-      !this.securityManager['config'].enableEncryption ||
-      !this.securityManager['config'].encryptionKey
+      !this.securityManager.config.enableEncryption ||
+      !this.securityManager.config.encryptionKey
     ) {
       return data;
     }
 
-    const sensitiveFields = this.securityManager['config'].piiFields;
+    const sensitiveFields = this.securityManager.config.piiFields;
     return this.deepEncrypt(data, sensitiveFields);
   }
 
@@ -558,7 +561,7 @@ export class CentralLogger implements ILogger {
     for (const [key, value] of Object.entries(object)) {
       if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
         // Encrypt sensitive field
-        result[key] = this.securityManager['encryptData'](String(value));
+        result[key] = this.securityManager.encryptData(String(value));
       } else if (typeof value === 'object') {
         result[key] = this.deepEncrypt(value, sensitiveFields);
       } else {
@@ -614,6 +617,8 @@ export class CentralLogger implements ILogger {
         throw error;
       }
     }
+
+    await Promise.resolve();
   }
 
   /**
@@ -700,4 +705,4 @@ export function getLogger(): ILogger {
   return globalLogger;
 }
 
-export default globalLogger as ILogger;
+export { globalLogger as default };

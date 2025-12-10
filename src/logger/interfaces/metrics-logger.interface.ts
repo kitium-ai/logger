@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import type { AlertCondition, PerformanceMetrics } from '../../utils/metrics-collector';
 
 /**

@@ -45,6 +45,7 @@ export class AdaptiveSamplingStrategy implements SamplingStrategy {
   private readonly volumeThreshold = 100; // High volume triggers sampling
   private readonly timeWindow = 60000; // 1 minute window
 
+  /* eslint-disable max-lines-per-function, max-statements */
   shouldSample(entry: LogEntry, context: SamplingContext): boolean {
     this.processed++;
 
@@ -173,6 +174,7 @@ export class PriorityBasedSamplingStrategy implements SamplingStrategy {
     }
   }
 
+  /* eslint-disable max-statements */
   shouldSample(entry: LogEntry, context: SamplingContext): boolean {
     this.processed++;
 
@@ -292,6 +294,7 @@ export class BurstSamplingStrategy implements SamplingStrategy {
   private readonly burstSamplingRate = 0.1; // 10% sampling during bursts
   private readonly normalSamplingRate = 0.5; // 50% sampling during normal operation
 
+  /* eslint-disable max-statements */
   shouldSample(entry: LogEntry, context: SamplingContext): boolean {
     this.processed++;
 

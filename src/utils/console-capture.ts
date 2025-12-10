@@ -66,6 +66,7 @@ type OriginalConsole = {
  * Capture console output with context propagation and logger integration
  * Framework-agnostic implementation
  */
+/* eslint-disable max-lines-per-function */
 export function captureConsole(options: ConsoleCaptureOptions = {}): ConsoleCapture {
   const {
     autoLogToLogger = false,

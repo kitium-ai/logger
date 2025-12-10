@@ -132,7 +132,10 @@ export class TransportHealthMonitor extends EventEmitter {
     }
 
     const startTime = Date.now();
-    const status = this.healthStatus.get(activeTransport)!;
+    const status = this.healthStatus.get(activeTransport);
+    if (!status) {
+      throw new Error(`Health status for transport ${activeTransport} not found`);
+    }
 
     try {
       await transport.send(data);
@@ -218,7 +221,7 @@ export class TransportHealthMonitor extends EventEmitter {
   shutdown(): void {
     if (this.healthCheckTimer) {
       clearInterval(this.healthCheckTimer);
-      this.healthCheckTimer = undefined!;
+      this.healthCheckTimer = undefined;
     }
     this.emit('shutdown');
   }

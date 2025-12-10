@@ -71,6 +71,7 @@ export class LogCorrelator {
   /**
    * Add a log entry to correlation tracking
    */
+  /* eslint-disable max-statements */
   addLogEntry(entry: LogEntry): void {
     const correlationId = this.extractCorrelationId(entry);
     if (!correlationId) {
@@ -150,7 +151,10 @@ export class LogCorrelator {
 
     // Check cache
     if (this.analysisCache.has(correlationId)) {
-      return this.analysisCache.get(correlationId)!;
+      const cached = this.analysisCache.get(correlationId);
+      if (cached !== undefined) {
+        return cached;
+      }
     }
 
     const analysis: LogAnalysis = {
@@ -260,7 +264,7 @@ export class LogCorrelator {
       const operation = this.extractOperation(entry) || 'unknown';
       const service = this.extractService(entry) || 'unknown';
 
-      if (!operationStats[operation]) {
+      if (!Object.prototype.hasOwnProperty.call(operationStats, operation)) {
         operationStats[operation] = { durations: [], services: new Set(), count: 0 };
       }
 
@@ -333,7 +337,7 @@ export class LogCorrelator {
         // Group similar errors
         const pattern = this.normalizeErrorMessage(message);
 
-        if (!errorGroups[pattern]) {
+        if (!Object.prototype.hasOwnProperty.call(errorGroups, pattern)) {
           errorGroups[pattern] = { count: 0, services: new Set(), timestamps: [] };
         }
 

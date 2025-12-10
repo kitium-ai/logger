@@ -165,8 +165,10 @@ export class EnhancedSecurityManager {
     const key = cipher.digest();
 
     // XOR encryption (not secure for production)
+
     let encrypted = '';
     for (let index = 0; index < data.length; index++) {
+      // eslint-disable-next-line no-bitwise
       encrypted += String.fromCharCode(data.charCodeAt(index) ^ (key[index % key.length] || 0));
     }
 

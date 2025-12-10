@@ -221,7 +221,7 @@ export function assertValidConfig(config: LoggerConfig): void {
 
   // Throw if validation failed
   if (!result.valid) {
-    const errorMessages = result.errors.map((e) => e.message).join('; ');
+    const errorMessages = result.errors.map((error) => error.message).join('; ');
     throw new Error(`Configuration validation failed: ${errorMessages}`);
   }
 }

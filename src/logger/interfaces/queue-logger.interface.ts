@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import type { AsyncQueueStats, LogEntry } from '../../utils/async-logging-queue';
 
 /**

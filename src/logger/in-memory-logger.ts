@@ -111,8 +111,13 @@ export class InMemoryLogger implements ILogger {
    * Check if log matches message pattern filter
    */
   private matchesMessagePattern(log: LogEntry, pattern: string | RegExp): boolean {
-    const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
-    return regex.test(log.message);
+    try {
+      const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
+      return regex.test(log.message);
+    } catch {
+      // Invalid regex pattern, return false
+      return false;
+    }
   }
 
   /**
@@ -141,13 +146,7 @@ export class InMemoryLogger implements ILogger {
     startTime: number | undefined,
     endTime: number | undefined
   ): boolean {
-    if (startTime && log.timestamp < startTime) {
-      return false;
-    }
-    if (endTime && log.timestamp > endTime) {
-      return false;
-    }
-    return true;
+    return !(startTime && log.timestamp < startTime) && !(endTime && log.timestamp > endTime);
   }
 
   /**
@@ -159,7 +158,7 @@ export class InMemoryLogger implements ILogger {
     }
     const meta = log.meta as Record<string, unknown>;
     for (const [key, value] of Object.entries(filterMeta)) {
-      if (meta[key] !== value) {
+      if (!(key in meta) || meta[key] !== value) {
         return false;
       }
     }

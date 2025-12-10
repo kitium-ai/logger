@@ -133,17 +133,17 @@ export class AsyncLoggingQueue extends EventEmitter {
     // Clear all timers
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
-      this.flushTimer = undefined!;
+      this.flushTimer = undefined;
     }
 
     if (this.retryTimer) {
       clearInterval(this.retryTimer);
-      this.retryTimer = undefined!;
+      this.retryTimer = undefined;
     }
 
     if (this.metricsTimer) {
       clearInterval(this.metricsTimer);
-      this.metricsTimer = undefined!;
+      this.metricsTimer = undefined;
     }
 
     // Persist queues before shutdown
@@ -185,6 +185,7 @@ export class AsyncLoggingQueue extends EventEmitter {
     }
   }
 
+  /* eslint-disable max-statements */
   private async processQueue(): Promise<void> {
     if (this.processing || this.queue.length === 0) {
       return;
@@ -387,7 +388,7 @@ export class AsyncLoggingQueue extends EventEmitter {
     try {
       // Load retry queue
       const retryPath = `${this.config.persistencePath}/retry-queue.json`;
-      if (existsSync(retryPath)) {
+      if (this.isValidFilePath(retryPath) && existsSync(retryPath)) {
         const retryData = readFileSync(retryPath, 'utf8');
         this.retryQueue = JSON.parse(retryData);
         this.stats.retryQueueSize = this.retryQueue.length;
@@ -396,7 +397,7 @@ export class AsyncLoggingQueue extends EventEmitter {
       // Load dead letter queue
       const dlqPath =
         this.config.deadLetterQueuePath || `${this.config.persistencePath}/dead-letter-queue.json`;
-      if (existsSync(dlqPath)) {
+      if (this.isValidFilePath(dlqPath) && existsSync(dlqPath)) {
         const dlqData = readFileSync(dlqPath, 'utf8');
         this.deadLetterQueue = JSON.parse(dlqData);
         this.stats.deadLetterCount = this.deadLetterQueue.length;
@@ -415,16 +416,23 @@ export class AsyncLoggingQueue extends EventEmitter {
     }
 
     try {
-      mkdirSync(this.config.persistencePath, { recursive: true });
+      if (this.isValidFilePath(this.config.persistencePath)) {
+        mkdirSync(this.config.persistencePath, { recursive: true });
 
-      // Persist retry queue
-      const retryPath = `${this.config.persistencePath}/retry-queue.json`;
-      writeFileSync(retryPath, JSON.stringify(this.retryQueue));
+        // Persist retry queue
+        const retryPath = `${this.config.persistencePath}/retry-queue.json`;
+        if (this.isValidFilePath(retryPath)) {
+          writeFileSync(retryPath, JSON.stringify(this.retryQueue));
+        }
 
-      // Persist dead letter queue
-      const dlqPath =
-        this.config.deadLetterQueuePath || `${this.config.persistencePath}/dead-letter-queue.json`;
-      writeFileSync(dlqPath, JSON.stringify(this.deadLetterQueue));
+        // Persist dead letter queue
+        const dlqPath =
+          this.config.deadLetterQueuePath ||
+          `${this.config.persistencePath}/dead-letter-queue.json`;
+        if (this.isValidFilePath(dlqPath)) {
+          writeFileSync(dlqPath, JSON.stringify(this.deadLetterQueue));
+        }
+      }
     } catch (error) {
       this.emit('persistence-error', error);
     }
@@ -505,5 +513,19 @@ export class AsyncLoggingQueue extends EventEmitter {
       void this.processQueue();
     }
     return requeued;
+  }
+
+  /**
+   * Validate file path for security
+   */
+  private isValidFilePath(filePath: string): boolean {
+    // Basic validation to prevent directory traversal and ensure it's a JSON file
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    return (
+      normalizedPath.endsWith('.json') &&
+      !normalizedPath.includes('../') &&
+      !normalizedPath.includes('..\\') &&
+      normalizedPath.split('/').every((segment) => segment !== '..' && segment !== '')
+    );
   }
 }

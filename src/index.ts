@@ -143,5 +143,21 @@ export {
   performHealthCheck,
 } from './utils/health-check';
 
+// Mock logger exports for testing
+export type { MockLogCall } from './utils/mock-logger';
+export {
+  MockLogger,
+  createMockLogger,
+  createMockLoggerWithContext,
+  createLoggerSpy,
+  setupLoggerMatchers,
+  createIsolatedMockLogger,
+  MockLoggerFactory,
+  createMockLoggerFactory,
+  toHaveLogged,
+  toHaveLoggedMessage,
+  toHaveLoggedLevel,
+} from './utils/mock-logger';
+
 // Re-export common types
 export type { NextFunction, Request, Response } from 'express';

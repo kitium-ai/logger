@@ -32,7 +32,12 @@ export class NestLoggerMiddleware {
     const headers = request.headers ?? {};
 
     // Use centralized trace context extraction
-    const getHeader = (name: string): string | undefined => headers[name];
+    const getHeader = (name: string): string | undefined => {
+      if (Object.prototype.hasOwnProperty.call(headers, name)) {
+        return headers[name];
+      }
+      return undefined;
+    };
     const context = TraceContextExtractor.extractLogContext(getHeader, true);
 
     contextManager.run(context, () => {

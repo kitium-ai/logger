@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import type { LogContext } from '../../context/async-context';
 import type { ICoreLogger } from './core-logger.interface';
 

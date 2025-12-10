@@ -22,8 +22,11 @@ function readHeader(headers: HeaderSource | undefined, key: string): string | un
     return Array.isArray(value) ? value[0] : (value ?? undefined);
   }
 
-  const recordValue = (headers as Record<string, HeaderValue>)[key];
-  return Array.isArray(recordValue) ? recordValue[0] : (recordValue ?? undefined);
+  if (Object.prototype.hasOwnProperty.call(headers, key)) {
+    const recordValue = (headers as Record<string, HeaderValue>)[key];
+    return Array.isArray(recordValue) ? recordValue[0] : (recordValue ?? undefined);
+  }
+  return undefined;
 }
 
 function normalizeTraceValue(value?: string): string | undefined {
