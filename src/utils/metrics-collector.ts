@@ -31,11 +31,27 @@ export interface PerformanceMetrics {
 }
 
 export interface AlertCondition {
-  type: 'error_rate' | 'throughput_drop' | 'queue_size' | 'dead_letter_growth';
+  type: 'error_rate' | 'throughput_drop' | 'queue_size' | 'dead_letter_growth' | 'custom';
   threshold: number;
   currentValue: number;
   timestamp: number;
   severity: 'low' | 'medium' | 'high' | 'critical';
+  customMetricName?: string;
+}
+
+export interface CustomMetricDefinition {
+  name: string;
+  type: 'counter' | 'gauge' | 'histogram';
+  description?: string;
+  labels?: Record<string, string>;
+  buckets?: number[]; // For histograms
+}
+
+export interface CustomMetricValue {
+  name: string;
+  value: number;
+  timestamp: number;
+  labels?: Record<string, string>;
 }
 
 export class MetricsCollector extends EventEmitter {
@@ -43,6 +59,13 @@ export class MetricsCollector extends EventEmitter {
   private alerts: AlertCondition[] = [];
   private timer?: NodeJS.Timeout;
   private lastMetrics?: PerformanceMetrics;
+
+  // Custom metrics storage
+  private customMetrics: Map<string, CustomMetricDefinition> = new Map();
+  private customValues: Map<string, CustomMetricValue[]> = new Map();
+  private counters: Map<string, number> = new Map();
+  private gauges: Map<string, number> = new Map();
+  private histograms: Map<string, { buckets: number[]; counts: number[]; sum: number; count: number }> = new Map();
 
   constructor(
     private config: MetricsConfig,
@@ -245,11 +268,184 @@ export class MetricsCollector extends EventEmitter {
   /**
    * Export metrics data
    */
-  exportMetrics(): { metrics: PerformanceMetrics[]; alerts: AlertCondition[] } {
+  exportMetrics(): { metrics: PerformanceMetrics[]; alerts: AlertCondition[]; customMetrics: CustomMetricValue[] } {
+    const customMetrics: CustomMetricValue[] = [];
+    for (const values of this.customValues.values()) {
+      customMetrics.push(...values);
+    }
+
     return {
       metrics: [...this.metrics],
       alerts: [...this.alerts],
+      customMetrics,
     };
+  }
+
+  /**
+   * Register a custom metric
+   */
+  registerCustomMetric(definition: CustomMetricDefinition): void {
+    this.customMetrics.set(definition.name, definition);
+
+    switch (definition.type) {
+      case 'counter':
+        this.counters.set(definition.name, 0);
+        break;
+      case 'gauge':
+        this.gauges.set(definition.name, 0);
+        break;
+      case 'histogram':
+        this.histograms.set(definition.name, {
+          buckets: definition.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+          counts: new Array((definition.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]).length + 1).fill(0),
+          sum: 0,
+          count: 0,
+        });
+        break;
+    }
+  }
+
+  /**
+   * Increment a counter metric
+   */
+  incrementCounter(name: string, value: number = 1, labels?: Record<string, string>): void {
+    const definition = this.customMetrics.get(name);
+    if (!definition || definition.type !== 'counter') {
+      throw new Error(`Counter metric '${name}' not registered or wrong type`);
+    }
+
+    const current = this.counters.get(name) || 0;
+    this.counters.set(name, current + value);
+
+    this.recordCustomValue(name, current + value, labels);
+  }
+
+  /**
+   * Set a gauge metric value
+   */
+  setGauge(name: string, value: number, labels?: Record<string, string>): void {
+    const definition = this.customMetrics.get(name);
+    if (!definition || definition.type !== 'gauge') {
+      throw new Error(`Gauge metric '${name}' not registered or wrong type`);
+    }
+
+    this.gauges.set(name, value);
+    this.recordCustomValue(name, value, labels);
+  }
+
+  /**
+   * Observe a value for a histogram metric
+   */
+  observeHistogram(name: string, value: number, labels?: Record<string, string>): void {
+    const definition = this.customMetrics.get(name);
+    if (!definition || definition.type !== 'histogram') {
+      throw new Error(`Histogram metric '${name}' not registered or wrong type`);
+    }
+
+    const histogram = this.histograms.get(name);
+    if (!histogram) {
+      throw new Error(`Histogram '${name}' not initialized`);
+    }
+
+    // Update sum and count
+    histogram.sum += value;
+    histogram.count++;
+
+    // Find the appropriate bucket and increment its count
+    let bucketIndex = histogram.buckets.length; // Default to last bucket (values > max)
+    for (let i = 0; i < histogram.buckets.length; i++) {
+      if (value <= histogram.buckets[i]!) {
+        bucketIndex = i;
+        break;
+      }
+    }
+    const currentCount = histogram.counts[bucketIndex] ?? 0;
+    histogram.counts[bucketIndex] = currentCount + 1;
+
+    // Record the custom value with labels
+    this.recordCustomValue(name, value, labels);
+  }
+
+  /**
+   * Get current values of all custom metrics
+   */
+  getCustomMetrics(): Record<string, { value: number; type: string; labels?: Record<string, string> }> {
+    const result: Record<string, { value: number; type: string; labels?: Record<string, string> }> = {};
+
+    for (const [name, definition] of this.customMetrics) {
+      let value = 0;
+      switch (definition.type) {
+        case 'counter':
+          value = this.counters.get(name) || 0;
+          break;
+        case 'gauge':
+          value = this.gauges.get(name) || 0;
+          break;
+        case 'histogram':
+          const histogram = this.histograms.get(name);
+          if (!histogram) {
+            throw new Error(`Histogram ${name} not found`);
+          }
+          value = histogram.count > 0 ? histogram.sum / histogram.count : 0;
+          break;
+      }
+
+      result[name] = {
+        value,
+        type: definition.type,
+        labels: definition.labels || {},
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * Get custom metric values for a time range
+   */
+  getCustomMetricsRange(name: string, startTime: number, endTime: number): CustomMetricValue[] {
+    const values = this.customValues.get(name) || [];
+    return values.filter(v => v.timestamp >= startTime && v.timestamp <= endTime);
+  }
+
+  /**
+   * Set up alerting for custom metrics
+   */
+  setCustomMetricAlert(name: string, threshold: number, condition: 'above' | 'below' | 'equals'): void {
+    // This would be called during metrics collection to check custom metric alerts
+    const definition = this.customMetrics.get(name);
+    if (!definition) {
+      throw new Error(`Custom metric '${name}' not registered`);
+    }
+
+    // Store alert configuration for checking during collection
+    this.emit('custom-alert-configured', { name, threshold, condition });
+  }
+
+  /**
+   * Record a custom metric value
+   */
+  private recordCustomValue(name: string, value: number, labels?: Record<string, string>): void {
+    const customValue: CustomMetricValue = {
+      name,
+      value,
+      timestamp: Date.now(),
+      labels: labels || {},
+    };
+
+    if (!this.customValues.has(name)) {
+      this.customValues.set(name, []);
+    }
+
+    this.customValues.get(name)!.push(customValue);
+
+    // Keep only recent values (configurable retention)
+    const values = this.customValues.get(name)!;
+    if (values.length > 1000) { // Keep last 1000 values
+      this.customValues.set(name, values.slice(-1000));
+    }
+
+    this.emit('custom-metric-recorded', customValue);
   }
 
   /**

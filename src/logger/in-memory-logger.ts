@@ -102,6 +102,144 @@ export class InMemoryLogger implements ILogger {
   }
 
   /**
+   * Advanced filtering with multiple criteria
+   */
+  getLogsByFilter(filter: {
+    level?: string | string[];
+    messagePattern?: string | RegExp;
+    traceId?: string;
+    userId?: string;
+    startTime?: number;
+    endTime?: number;
+    meta?: Record<string, unknown>;
+    limit?: number;
+    offset?: number;
+  }): LogEntry[] {
+    let filtered = this.logs.filter((log) => {
+      // Level filter
+      if (filter.level) {
+        const levels = Array.isArray(filter.level) ? filter.level : [filter.level];
+        if (!levels.includes(log.level)) return false;
+      }
+
+      // Message pattern filter
+      if (filter.messagePattern) {
+        // eslint-disable-next-line security/detect-non-literal-regexp
+        const regex = typeof filter.messagePattern === 'string'
+          ? new RegExp(filter.messagePattern)
+          : filter.messagePattern;
+        if (!regex.test(log.message)) return false;
+      }
+
+      // Trace ID filter
+      if (filter.traceId && log.contextId !== filter.traceId) return false;
+
+      // User ID filter
+      if (filter.userId) {
+        if (typeof log.meta === 'object' && log.meta !== null) {
+          const meta = log.meta as Record<string, unknown>;
+          if (meta['userId'] !== filter.userId) return false;
+        } else {
+          return false;
+        }
+      }
+
+      // Time range filter
+      if (filter.startTime && log.timestamp < filter.startTime) return false;
+      if (filter.endTime && log.timestamp > filter.endTime) return false;
+
+      // Metadata filter
+      if (filter.meta) {
+        if (typeof log.meta !== 'object' || log.meta === null) return false;
+        const meta = log.meta as Record<string, unknown>;
+        for (const [key, value] of Object.entries(filter.meta)) {
+          if (meta[key] !== value) return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Apply pagination
+    if (filter.offset) {
+      filtered = filtered.slice(filter.offset);
+    }
+    if (filter.limit) {
+      filtered = filtered.slice(0, filter.limit);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Search logs with full-text search across message and metadata
+   */
+  searchLogs(query: string, options: {
+    caseSensitive?: boolean;
+    fields?: ('message' | 'meta' | 'level' | 'contextId')[];
+    limit?: number;
+  } = {}): LogEntry[] {
+    const { caseSensitive = false, fields = ['message', 'meta'], limit } = options;
+    const searchTerm = caseSensitive ? query : query.toLowerCase();
+
+    const results = this.logs.filter((log) => {
+      const searchFields = fields;
+
+      for (const field of searchFields) {
+        let fieldValue = '';
+
+        switch (field) {
+          case 'message':
+            fieldValue = caseSensitive ? log.message : log.message.toLowerCase();
+            break;
+          case 'level':
+            fieldValue = caseSensitive ? log.level : log.level.toLowerCase();
+            break;
+          case 'contextId':
+            fieldValue = log.contextId || '';
+            if (!caseSensitive) fieldValue = fieldValue.toLowerCase();
+            break;
+          case 'meta':
+            if (typeof log.meta === 'object' && log.meta !== null) {
+              fieldValue = caseSensitive
+                ? JSON.stringify(log.meta)
+                : JSON.stringify(log.meta).toLowerCase();
+            }
+            break;
+        }
+
+        if (fieldValue.includes(searchTerm)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    return limit ? results.slice(0, limit) : results;
+  }
+
+  /**
+   * Get logs within a time range
+   */
+  getLogsByTimeRange(startTime: number, endTime: number): LogEntry[] {
+    return this.logs.filter((log) => log.timestamp >= startTime && log.timestamp <= endTime);
+  }
+
+  /**
+   * Get logs by arbitrary metadata field
+   */
+  getLogsByMetaField(field: string, value: unknown): LogEntry[] {
+    return this.logs.filter((log) => {
+      if (typeof log.meta === 'object' && log.meta !== null) {
+        const meta = log.meta as Record<string, unknown>;
+        return meta[field] === value;
+      }
+      return false;
+    });
+  }
+
+  /**
    * Clear all logs
    */
   clear(): void {

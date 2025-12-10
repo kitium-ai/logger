@@ -1,0 +1,403 @@
+/**
+ * Log Correlation and Analysis - Low Priority Implementation
+ * Advanced correlation features for distributed tracing and log analysis
+ */
+
+import type { LogEntry } from './async-logging-queue';
+
+export interface CorrelationContext {
+  correlationId: string;
+  traceId: string;
+  spanId: string;
+  parentSpanId?: string;
+  serviceName: string;
+  operation: string;
+  startTime: number;
+  tags: Record<string, string>;
+}
+
+export interface LogCorrelation {
+  correlationId: string;
+  traceId: string;
+  entries: LogEntry[];
+  startTime: number;
+  endTime: number;
+  services: string[];
+  operations: string[];
+  errorCount: number;
+  warningCount: number;
+  totalLogs: number;
+  duration: number;
+}
+
+export interface LogAnalysis {
+  correlationId: string;
+  bottlenecks: BottleneckAnalysis[];
+  errorPatterns: ErrorPattern[];
+  performanceInsights: PerformanceInsight[];
+  recommendations: string[];
+}
+
+export interface BottleneckAnalysis {
+  operation: string;
+  service: string;
+  avgDuration: number;
+  maxDuration: number;
+  frequency: number;
+  impact: 'high' | 'medium' | 'low';
+}
+
+export interface ErrorPattern {
+  pattern: string;
+  frequency: number;
+  affectedServices: string[];
+  firstSeen: number;
+  lastSeen: number;
+  severity: 'error' | 'warning';
+}
+
+export interface PerformanceInsight {
+  type: 'slow_operation' | 'high_error_rate' | 'memory_pressure' | 'queue_backlog';
+  description: string;
+  severity: 'high' | 'medium' | 'low';
+  affectedServices: string[];
+  recommendation: string;
+}
+
+export class LogCorrelator {
+  private correlations: Map<string, LogCorrelation> = new Map();
+  private analysisCache: Map<string, LogAnalysis> = new Map();
+
+  /**
+   * Add a log entry to correlation tracking
+   */
+  addLogEntry(entry: LogEntry): void {
+    const correlationId = this.extractCorrelationId(entry);
+    if (!correlationId) return;
+
+    let correlation = this.correlations.get(correlationId);
+    if (!correlation) {
+      correlation = {
+        correlationId,
+        traceId: entry.contextId || correlationId,
+        entries: [],
+        startTime: entry.timestamp,
+        endTime: entry.timestamp,
+        services: [],
+        operations: [],
+        errorCount: 0,
+        warningCount: 0,
+        totalLogs: 0,
+        duration: 0,
+      };
+      this.correlations.set(correlationId, correlation);
+    }
+
+    correlation.entries.push(entry);
+    correlation.endTime = Math.max(correlation.endTime, entry.timestamp);
+    correlation.startTime = Math.min(correlation.startTime, entry.timestamp);
+    correlation.totalLogs++;
+
+    // Extract service and operation info
+    const service = this.extractService(entry);
+    const operation = this.extractOperation(entry);
+
+    if (service && !correlation.services.includes(service)) {
+      correlation.services.push(service);
+    }
+
+    if (operation && !correlation.operations.includes(operation)) {
+      correlation.operations.push(operation);
+    }
+
+    // Count errors and warnings
+    if (entry.level === 'error') {
+      correlation.errorCount++;
+    } else if (entry.level === 'warn') {
+      correlation.warningCount++;
+    }
+
+    correlation.duration = correlation.endTime - correlation.startTime;
+
+    // Invalidate cached analysis
+    this.analysisCache.delete(correlationId);
+  }
+
+  /**
+   * Get correlation data for a specific ID
+   */
+  getCorrelation(correlationId: string): LogCorrelation | null {
+    return this.correlations.get(correlationId) || null;
+  }
+
+  /**
+   * Get all active correlations
+   */
+  getAllCorrelations(): LogCorrelation[] {
+    return Array.from(this.correlations.values());
+  }
+
+  /**
+   * Analyze a correlation for insights
+   */
+  analyzeCorrelation(correlationId: string): LogAnalysis | null {
+    const correlation = this.correlations.get(correlationId);
+    if (!correlation) return null;
+
+    // Check cache
+    if (this.analysisCache.has(correlationId)) {
+      return this.analysisCache.get(correlationId)!;
+    }
+
+    const analysis: LogAnalysis = {
+      correlationId,
+      bottlenecks: this.analyzeBottlenecks(correlation),
+      errorPatterns: this.analyzeErrorPatterns(correlation),
+      performanceInsights: this.analyzePerformance(correlation),
+      recommendations: this.generateRecommendations(correlation),
+    };
+
+    this.analysisCache.set(correlationId, analysis);
+    return analysis;
+  }
+
+  /**
+   * Find correlations by time range
+   */
+  findCorrelationsByTimeRange(startTime: number, endTime: number): LogCorrelation[] {
+    return Array.from(this.correlations.values()).filter(
+      corr => corr.startTime <= endTime && corr.endTime >= startTime
+    );
+  }
+
+  /**
+   * Find correlations involving specific services
+   */
+  findCorrelationsByService(serviceName: string): LogCorrelation[] {
+    return Array.from(this.correlations.values()).filter(
+      corr => corr.services.includes(serviceName)
+    );
+  }
+
+  /**
+   * Clean up old correlations
+   */
+  cleanupOldCorrelations(maxAge: number = 24 * 60 * 60 * 1000): void {
+    const cutoff = Date.now() - maxAge;
+    for (const [id, correlation] of this.correlations) {
+      if (correlation.endTime < cutoff) {
+        this.correlations.delete(id);
+        this.analysisCache.delete(id);
+      }
+    }
+  }
+
+  /**
+   * Extract correlation ID from log entry
+   */
+  private extractCorrelationId(entry: LogEntry): string | null {
+    // Try different sources for correlation ID
+    if (entry.contextId) return entry.contextId;
+
+    if (typeof entry.meta === 'object' && entry.meta !== null) {
+      const meta = entry.meta as Record<string, unknown>;
+      return (meta.correlationId as string) ||
+             (meta.traceId as string) ||
+             (meta.requestId as string) ||
+             null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract service name from log entry
+   */
+  private extractService(entry: LogEntry): string | null {
+    if (typeof entry.meta === 'object' && entry.meta !== null) {
+      const meta = entry.meta as Record<string, unknown>;
+      return (meta.serviceName as string) ||
+             (meta.service as string) ||
+             null;
+    }
+    return null;
+  }
+
+  /**
+   * Extract operation name from log entry
+   */
+  private extractOperation(entry: LogEntry): string | null {
+    if (typeof entry.meta === 'object' && entry.meta !== null) {
+      const meta = entry.meta as Record<string, unknown>;
+      return (meta.operation as string) ||
+             (meta.method as string) ||
+             (meta.action as string) ||
+             null;
+    }
+    return null;
+  }
+
+  /**
+   * Analyze bottlenecks in the correlation
+   */
+  private analyzeBottlenecks(correlation: LogCorrelation): BottleneckAnalysis[] {
+    const operationStats: Record<string, { durations: number[]; services: Set<string>; count: number }> = {};
+
+    for (const entry of correlation.entries) {
+      const operation = this.extractOperation(entry) || 'unknown';
+      const service = this.extractService(entry) || 'unknown';
+
+      if (!operationStats[operation]) {
+        operationStats[operation] = { durations: [], services: new Set(), count: 0 };
+      }
+
+      operationStats[operation].count++;
+      operationStats[operation].services.add(service);
+
+      // Estimate duration from log timestamps (simplified)
+      if (entry.timestamp) {
+        operationStats[operation].durations.push(entry.timestamp);
+      }
+    }
+
+    const bottlenecks: BottleneckAnalysis[] = [];
+
+    for (const [operation, stats] of Object.entries(operationStats)) {
+      if (stats.durations.length > 1) {
+        const sorted = stats.durations.sort((a, b) => a - b);
+        const avgDuration = sorted.reduce((a, b) => a + b, 0) / sorted.length;
+        const maxDuration = sorted[sorted.length - 1];
+
+        let impact: 'high' | 'medium' | 'low' = 'low';
+        if (maxDuration > 5000) impact = 'high'; // > 5 seconds
+        else if (maxDuration > 1000) impact = 'medium'; // > 1 second
+
+        bottlenecks.push({
+          operation,
+          service: Array.from(stats.services)[0],
+          avgDuration,
+          maxDuration,
+          frequency: stats.count,
+          impact,
+        });
+      }
+    }
+
+    return bottlenecks.sort((a, b) => b.maxDuration - a.maxDuration);
+  }
+
+  /**
+   * Analyze error patterns in the correlation
+   */
+  private analyzeErrorPatterns(correlation: LogCorrelation): ErrorPattern[] {
+    const errorGroups: Record<string, { count: number; services: Set<string>; timestamps: number[] }> = {};
+
+    for (const entry of correlation.entries) {
+      if (entry.level === 'error' || entry.level === 'warn') {
+        const message = entry.message.toLowerCase();
+        const service = this.extractService(entry) || 'unknown';
+
+        // Group similar errors
+        const pattern = this.normalizeErrorMessage(message);
+
+        if (!errorGroups[pattern]) {
+          errorGroups[pattern] = { count: 0, services: new Set(), timestamps: [] };
+        }
+
+        errorGroups[pattern].count++;
+        errorGroups[pattern].services.add(service);
+        errorGroups[pattern].timestamps.push(entry.timestamp);
+      }
+    }
+
+    const patterns: ErrorPattern[] = [];
+
+    for (const [pattern, data] of Object.entries(errorGroups)) {
+      const timestamps = data.timestamps.sort((a, b) => a - b);
+      patterns.push({
+        pattern,
+        frequency: data.count,
+        affectedServices: Array.from(data.services),
+        firstSeen: timestamps[0],
+        lastSeen: timestamps[timestamps.length - 1],
+        severity: data.count > 5 ? 'error' : 'warning',
+      });
+    }
+
+    return patterns.sort((a, b) => b.frequency - a.frequency);
+  }
+
+  /**
+   * Analyze performance insights
+   */
+  private analyzePerformance(correlation: LogCorrelation): PerformanceInsight[] {
+    const insights: PerformanceInsight[] = [];
+
+    // Check for high error rate
+    const errorRate = correlation.errorCount / correlation.totalLogs;
+    if (errorRate > 0.1) { // > 10% errors
+      insights.push({
+        type: 'high_error_rate',
+        description: `High error rate: ${(errorRate * 100).toFixed(1)}%`,
+        severity: errorRate > 0.3 ? 'high' : 'medium',
+        affectedServices: correlation.services,
+        recommendation: 'Investigate error patterns and implement circuit breakers',
+      });
+    }
+
+    // Check for long duration
+    if (correlation.duration > 30000) { // > 30 seconds
+      insights.push({
+        type: 'slow_operation',
+        description: `Long-running operation: ${correlation.duration}ms`,
+        severity: 'medium',
+        affectedServices: correlation.services,
+        recommendation: 'Consider breaking down into smaller operations or implementing caching',
+      });
+    }
+
+    return insights;
+  }
+
+  /**
+   * Generate recommendations based on correlation analysis
+   */
+  private generateRecommendations(correlation: LogCorrelation): string[] {
+    const recommendations: string[] = [];
+
+    if (correlation.errorCount > correlation.totalLogs * 0.2) {
+      recommendations.push('Implement retry logic with exponential backoff');
+    }
+
+    if (correlation.services.length > 3) {
+      recommendations.push('Consider consolidating services or implementing service mesh');
+    }
+
+    if (correlation.duration > 10000) {
+      recommendations.push('Add performance monitoring and optimize slow operations');
+    }
+
+    if (correlation.operations.length > 10) {
+      recommendations.push('Review operation complexity and consider breaking down complex workflows');
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * Normalize error messages for pattern matching
+   */
+  private normalizeErrorMessage(message: string): string {
+    // Remove specific values, timestamps, IDs, etc.
+    return message
+      .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/g, '[TIMESTAMP]')
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '[UUID]')
+      .replace(/\d+/g, '[NUMBER]')
+      .replace(/https?:\/\/[^\s]+/g, '[URL]')
+      .toLowerCase();
+  }
+}
+
+// Global instance
+export const logCorrelator = new LogCorrelator();</content>
+<parameter name="filePath">/Users/ashish/Desktop/development/kitium-monorepo/packages/core/@kitiumai/logger/src/utils/log-correlator.ts

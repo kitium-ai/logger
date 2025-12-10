@@ -28,5 +28,24 @@ export type ILogger = {
     trends: any;
   };
   getMetricsRange?(startTime: number, endTime: number): PerformanceMetrics[];
-  exportMetrics?(): { metrics: PerformanceMetrics[]; alerts: AlertCondition[] };
+  exportMetrics?(): { metrics: PerformanceMetrics[]; alerts: AlertCondition[]; customMetrics?: any[] };
+  // Advanced filtering methods (low priority enhancements)
+  getLogsByFilter?(filter: {
+    level?: string | string[];
+    messagePattern?: string | RegExp;
+    traceId?: string;
+    userId?: string;
+    startTime?: number;
+    endTime?: number;
+    meta?: Record<string, unknown>;
+    limit?: number;
+    offset?: number;
+  }): LogEntry[];
+  searchLogs?(query: string, options?: {
+    caseSensitive?: boolean;
+    fields?: ('message' | 'meta' | 'level' | 'contextId')[];
+    limit?: number;
+  }): LogEntry[];
+  getLogsByTimeRange?(startTime: number, endTime: number): LogEntry[];
+  getLogsByMetaField?(field: string, value: unknown): LogEntry[];
 };
