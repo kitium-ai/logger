@@ -21,6 +21,88 @@ async function compileTypeScript() {
   await exec('tsc', ['-p', 'tsconfig.cjs.json'], { verbose: true, throwOnError: true });
 }
 
+async function rewriteEsmImports() {
+  const { log } = await import('@kitiumai/scripts/utils');
+  log('info', '🔧 Rewriting ESM imports...');
+
+  const { readdir, readFile, writeFile, stat } = await import('fs/promises');
+  const path = await import('path');
+
+  const esmDir = path.join(__dirname, 'dist', 'esm');
+
+  async function processDirectory(dirPath) {
+    const entries = await readdir(dirPath, { withFileTypes: true });
+
+    await Promise.all(
+      entries.map(async (entry) => {
+        const entryPath = path.join(dirPath, entry.name);
+
+        if (entry.isDirectory()) {
+          await processDirectory(entryPath);
+          return;
+        }
+
+        if (entry.isFile() && entry.name.endsWith('.js')) {
+          console.log(`Processing file: ${entryPath}`);
+          const content = await readFile(entryPath, 'utf8');
+          console.log(`Content length: ${content.length}, first 200 chars: ${content.substring(0, 200)}`);
+          let updatedContent = content;
+
+          // Find all import and export from statements and update them
+          const importRegex = /(?:import|export\s+.*?\s+from)\s+['"](\.\/[^'"]*?)['"]/g;
+          let match;
+          let matchCount = 0;
+          while ((match = importRegex.exec(content)) !== null) {
+            matchCount++;
+            console.log(`Found match ${matchCount}: ${match[0]}, path: ${match[1]}`);
+            const importPath = match[1];
+
+            // Skip if it already ends with .js
+            if (importPath.endsWith('.js')) {
+              continue;
+            }
+
+            // Check if this points to a directory with index.js
+            const fullPath = path.join(dirPath, importPath);
+            try {
+              const stats = await stat(fullPath);
+              if (stats.isDirectory()) {
+                const indexPath = path.join(fullPath, 'index.js');
+                const indexStats = await stat(indexPath);
+                if (indexStats.isFile()) {
+                  updatedContent = updatedContent.replace(
+                    `from '${importPath}'`,
+                    `from '${importPath}/index.js'`
+                  );
+                  continue;
+                }
+              }
+            } catch {
+              // Not a directory or doesn't exist
+            }
+
+            // If it's not a directory, add .js extension
+            updatedContent = updatedContent.replace(
+              `from '${importPath}'`,
+              `from '${importPath}.js'`
+            );
+          }
+
+          console.log(`Found ${matchCount} matches in ${entryPath}`);
+
+          if (updatedContent !== content) {
+            console.log(`Updated content for ${entryPath}`);
+            await writeFile(entryPath, updatedContent, 'utf8');
+          }
+        }
+      })
+    );
+  }
+
+  await processDirectory(esmDir);
+  log('info', '  ✓ Rewrote ESM imports');
+}
+
 async function copyScripts() {
   const { log, pathExists } = await import('@kitiumai/scripts/utils');
   log('info', '📋 Copying scripts folder...');
@@ -65,6 +147,7 @@ async function createPackageJsonFiles() {
 async function build() {
   try {
     await compileTypeScript();
+    await rewriteEsmImports();
     await createPackageJsonFiles();
     await copyScripts();
     const { log } = await import('@kitiumai/scripts/utils');

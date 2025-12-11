@@ -1,6 +1,6 @@
 {
   "name": "@kitiumai/logger",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "sideEffects": false,
   "type": "module",
   "description": "Enterprise-ready centralized logging system with Loki integration",
